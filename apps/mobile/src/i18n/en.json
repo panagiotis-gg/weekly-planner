@@ -56,7 +56,9 @@
     "delete": "Delete habit",
     "deleteConfirm": "Delete \"{{name}}\" from every week? This can't be undone.",
     "notScheduled": "Not scheduled",
-    "hideWhenAchieved": "Hide from Today's habits once this week's target is met"
+    "hideWhenAchieved": "Hide from Today's habits once this week's target is met",
+    "new": "New habit",
+    "namePlaceholder": "e.g. 8 hours of sleep"
   },
   "event": {
     "new": "New event",
@@ -155,5 +157,11 @@
   "a11y": {
     "counter": "{{label}}: {{count}} of {{goal}}. Add one",
     "counterNoGoal": "{{label}}: {{count}}. Add one"
+  },
+  "todo": {
+    "titlePlaceholder": "e.g. book dentist appointment"
+  },
+  "task": {
+    "titlePlaceholder": "e.g. pay phone bill"
   }
 }

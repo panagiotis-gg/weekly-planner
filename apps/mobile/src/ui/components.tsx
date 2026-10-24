@@ -288,6 +288,17 @@ export function AddRow({ placeholder, onAdd, maxLength }: { placeholder: string;
   );
 }
 
+/** "+ New …" row that opens a dialog for creating an item (instead of typing inline). */
+export function AddButton({ label, onPress }: { label: string; onPress: () => void }) {
+  const p = usePalette();
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.addRow}>
+      <Text style={{ color: p.accent, fontSize: 16, width: 22, textAlign: 'center' }}>+</Text>
+      <Text style={[styles.editable, { color: p.textMuted, flex: 1 }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 /** Bottom sheet style modal (RN Modal works on native and web). */
 export function Sheet({
   visible,

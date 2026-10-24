@@ -36,7 +36,7 @@ import { DayCellView, summaryText } from '@/features/checklist/itemViews';
 import { TargetEditor } from '@/features/targets/TargetEditor';
 import { formatWeekday } from '@/lib/format';
 import { useCanEdit, usePlannerId } from '@/state/planner';
-import { AddRow, Button, Chip, Field, ProgressBar, Sheet, textStyles } from '@/ui/components';
+import { AddButton, Button, Chip, Field, ProgressBar, Sheet, textStyles } from '@/ui/components';
 import { confirm } from '@/ui/confirm';
 import { usePalette } from '@/ui/theme';
 
@@ -80,7 +80,8 @@ export function HabitGrid({
   const text = textStyles(p);
   const plannerId = usePlannerId();
   const canEdit = useCanEdit();
-  const [editing, setEditing] = useState<Habit | null>(null);
+  // null = closed, 'new' = create dialog, a habit = edit dialog.
+  const [editing, setEditing] = useState<Habit | 'new' | null>(null);
   const byId = new Map(habits.map((h) => [h.id, h]));
 
   return (
@@ -130,13 +131,14 @@ export function HabitGrid({
       })}
       <ProgressBar percent={habitProgress(rows).percent} />
       {canEdit ? (
-        <AddRow placeholder={t('week.addHabit')} maxLength={TEXT_LIMITS.habitName} onAdd={(name) => addHabit(plannerId, range.weekKey, name)} />
+        <AddButton label={t('week.addHabit')} onPress={() => setEditing('new')} />
       ) : null}
       {editing ? (
         <HabitEditor
-          habit={editing}
+          habit={editing === 'new' ? null : editing}
+          plannerId={plannerId}
           weekKey={range.weekKey}
-          version={scheduleVersionForWeek(editing.id, schedules, range.weekKey)}
+          version={editing === 'new' ? null : scheduleVersionForWeek(editing.id, schedules, range.weekKey)}
           dates={range.days}
           onClose={() => setEditing(null)}
         />
@@ -145,14 +147,17 @@ export function HabitGrid({
   );
 }
 
+/** Create (habit = null) or edit a habit: name, days, target and the hide-when-achieved setting. */
 function HabitEditor({
   habit,
+  plannerId,
   weekKey,
   version,
   dates,
   onClose,
 }: {
-  habit: Habit;
+  habit: Habit | null;
+  plannerId: string;
   weekKey: string;
   version: HabitScheduleLike | null;
   /** The displayed week's dates, so chips follow its order (Mon- or Sun-first). */
@@ -162,25 +167,37 @@ function HabitEditor({
   const { t } = useTranslation();
   const p = usePalette();
   const text = textStyles(p);
-  const [name, setName] = useState(habit.name);
+  const [name, setName] = useState(habit?.name ?? '');
   const [selected, setSelected] = useState<IsoWeekday[]>(weekdaysFromMask(version?.weekdays ?? ALL_DAYS_MASK));
   const [target, setTarget] = useState<Target>(targetOf(version));
-  const [hide, setHide] = useState(habit.hideWhenAchieved);
+  const [hide, setHide] = useState(habit?.hideWhenAchieved ?? false);
 
   const save = () => {
-    if (name.trim() && name !== habit.name) renameHabit(habit, name);
-    if (hide !== habit.hideWhenAchieved) setHideWhenAchieved(habit, hide);
-    // "N days a week" can't exceed the selected days (J2, J12).
     const days = selected.length;
+    if (!name.trim() || days === 0) return;
+    // "N days a week" can't exceed the selected days (J2, J12).
     const fitted = target.daysPerWeek !== null ? { ...target, daysPerWeek: Math.min(target.daysPerWeek, days) } : target;
-    if (days > 0) setHabitPlan(habit.plannerId, habit.id, weekKey, maskFromWeekdays(selected), fitted);
+    if (!habit) {
+      addHabit(plannerId, weekKey, name, maskFromWeekdays(selected), fitted, hide);
+    } else {
+      if (name !== habit.name) renameHabit(habit, name);
+      if (hide !== habit.hideWhenAchieved) setHideWhenAchieved(habit, hide);
+      setHabitPlan(habit.plannerId, habit.id, weekKey, maskFromWeekdays(selected), fitted);
+    }
     onClose();
   };
 
   return (
-    <Sheet visible onClose={onClose} title={t('habit.edit')}>
+    <Sheet visible onClose={onClose} title={t(habit ? 'habit.edit' : 'habit.new')}>
       <Text style={text.muted}>{t('habit.name')}</Text>
-      <Field value={name} onChangeText={setName} maxLength={TEXT_LIMITS.habitName} accessibilityLabel={t('habit.name')} />
+      <Field
+        value={name}
+        onChangeText={setName}
+        autoFocus={!habit}
+        maxLength={TEXT_LIMITS.habitName}
+        placeholder={t('habit.namePlaceholder')}
+        accessibilityLabel={t('habit.name')}
+      />
       <Text style={text.muted}>{t('habit.days')}</Text>
       <View style={styles.chips}>
         {dates.map((date) => {
@@ -196,7 +213,7 @@ function HabitEditor({
         })}
       </View>
       <TargetEditor value={target} onChange={setTarget} maxDays={selected.length} />
-      <Text style={text.muted}>{t('habit.daysHint')}</Text>
+      {habit ? <Text style={text.muted}>{t('habit.daysHint')}</Text> : null}
       {target.targetType ? (
         <View style={styles.switchRow}>
           <Text style={[text.body, styles.flex]}>{t('habit.hideWhenAchieved')}</Text>
@@ -204,6 +221,22 @@ function HabitEditor({
         </View>
       ) : null}
       <Button title={t('common.save')} onPress={save} disabled={selected.length === 0 || !name.trim()} />
+      {habit ? (
+        <HabitActions habit={habit} weekKey={weekKey} onClose={onClose} />
+      ) : (
+        <Button title={t('common.cancel')} variant="secondary" onPress={onClose} />
+      )}
+    </Sheet>
+  );
+}
+
+/** Edit-only actions: undo a tap, stop tracking, delete. */
+function HabitActions({ habit, weekKey, onClose }: { habit: Habit; weekKey: string; onClose: () => void }) {
+  const { t } = useTranslation();
+  const p = usePalette();
+  const text = textStyles(p);
+  return (
+    <>
       <View style={styles.actionRow}>
         <View style={styles.flex}>
           <Button title={t('target.undoLastTap')} variant="secondary" onPress={() => removeLatestItemCompletion(habit.plannerId, habit.id)} />
@@ -230,7 +263,7 @@ function HabitEditor({
           })
         }
       />
-    </Sheet>
+    </>
   );
 }
 

@@ -28,7 +28,14 @@ export function getHabitSchedules(plannerId: string): HabitSchedule[] {
   return selectRows<HabitSchedule>('habit_schedule', plannerId);
 }
 
-export function addHabit(plannerId: string, weekKey: IsoDate, name: string, weekdays = ALL_DAYS_MASK): void {
+export function addHabit(
+  plannerId: string,
+  weekKey: IsoDate,
+  name: string,
+  weekdays = ALL_DAYS_MASK,
+  target: Target = NO_TARGET,
+  hideWhenAchieved = false, // J16 default: keep showing
+): void {
   const habits = getHabits(plannerId);
   const id = newId();
   writeFields('habit', id, plannerId, {
@@ -36,10 +43,10 @@ export function addHabit(plannerId: string, weekKey: IsoDate, name: string, week
     position: keyBetween(habits.at(-1)?.position ?? null, null),
     startsOn: weekKey,
     endsOn: null,
-    hideWhenAchieved: false, // J16 default: keep showing
+    hideWhenAchieved,
     deleted: false,
   });
-  setHabitPlan(plannerId, id, weekKey, weekdays, NO_TARGET);
+  setHabitPlan(plannerId, id, weekKey, weekdays, target);
 }
 
 export function renameHabit(habit: Habit, name: string): void {

@@ -1,4 +1,4 @@
-import { IsoDate, keyBetween, newId, Target, Task, taskDates, WeeklyTodo } from '@planner/shared';
+import { IsoDate, keyBetween, newId, NO_TARGET, Target, Task, taskDates, WeeklyTodo } from '@planner/shared';
 import { selectRows, writeFields } from '../write';
 import { discardCompletionsOutside } from './completions';
 
@@ -35,30 +35,33 @@ export const todoUsesCompletions = (todo: WeeklyTodo) => todo.targetType !== nul
 
 const lastPosition = (items: { position: string }[]) => items.at(-1)?.position ?? null;
 
-export function addTask(plannerId: string, date: IsoDate, title: string): void {
+export function addTask(
+  plannerId: string,
+  date: IsoDate,
+  title: string,
+  perDay: number | null = null,
+  spanDays: number | null = null,
+): void {
   const position = keyBetween(lastPosition(getTasks(plannerId, date)), null);
   writeFields('task', newId(), plannerId, {
     date,
     title: title.trim(),
     done: false,
     position,
-    perDay: null,
-    spanDays: null,
+    perDay,
+    spanDays,
     deleted: false,
   });
 }
 
-export function addWeeklyTodo(plannerId: string, weekKey: IsoDate, title: string): void {
+export function addWeeklyTodo(plannerId: string, weekKey: IsoDate, title: string, target: Target = NO_TARGET): void {
   const position = keyBetween(lastPosition(getWeeklyTodos(plannerId, weekKey)), null);
   writeFields('weekly_todo', newId(), plannerId, {
     weekKey,
     title: title.trim(),
     done: false,
     position,
-    targetType: null,
-    perDay: null,
-    daysPerWeek: null,
-    timesPerWeek: null,
+    ...target,
     deleted: false,
   });
 }

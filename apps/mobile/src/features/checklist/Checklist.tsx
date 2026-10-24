@@ -6,7 +6,7 @@ import { deleteItem, moveTaskToDate, moveWithinList, renameItem } from '@/data/r
 import { countCompletionsOutside } from '@/data/repositories/completions';
 import { formatMonthDay, formatWeekday } from '@/lib/format';
 import { useCanEdit } from '@/state/planner';
-import { AddRow, Button, Checkbox, Counter, EditableText, IconButton, ProgressBar, Sheet, textStyles } from '@/ui/components';
+import { AddButton, AddRow, Button, Checkbox, Counter, EditableText, IconButton, ProgressBar, Sheet, textStyles } from '@/ui/components';
 import { confirm } from '@/ui/confirm';
 import { usePalette } from '@/ui/theme';
 import { DayCellView, ItemView } from './itemViews';
@@ -36,12 +36,16 @@ export function Checklist({
   moveTargets,
   progressColor,
   renderTargetEditor,
+  renderCreate,
 }: {
   kind: 'task' | 'weekly_todo';
   items: Item[];
   views: ReadonlyMap<string, ItemView>;
-  onAdd: (title: string) => void;
+  /** Inline add (type and press enter). Ignored when `renderCreate` is given. */
+  onAdd?: (title: string) => void;
   addPlaceholder: string;
+  /** Create dialog opened by the "+ New …" row instead of inline typing. */
+  renderCreate?: (close: () => void) => ReactNode;
   /** Dates a task can be moved to (tasks only). */
   moveTargets?: IsoDate[];
   progressColor?: string;
@@ -54,6 +58,7 @@ export function Checklist({
   const canEdit = useCanEdit();
   const [actionsFor, setActionsFor] = useState<number | null>(null);
   const [editingTarget, setEditingTarget] = useState(false);
+  const [creating, setCreating] = useState(false);
   const progress = checklistProgress(items.map((i) => ({ done: views.get(i.id)?.struck ?? false, fraction: views.get(i.id)?.fraction })));
   const selected = actionsFor !== null ? items[actionsFor] : undefined;
   const selectedView = selected ? views.get(selected.id) : undefined;
@@ -112,7 +117,13 @@ export function Checklist({
           </View>
         );
       })}
-      {canEdit ? <AddRow placeholder={addPlaceholder} onAdd={onAdd} maxLength={TEXT_LIMITS.title} /> : null}
+      {canEdit && renderCreate ? <AddButton label={addPlaceholder} onPress={() => setCreating(true)} /> : null}
+      {canEdit && !renderCreate && onAdd ? <AddRow placeholder={addPlaceholder} onAdd={onAdd} maxLength={TEXT_LIMITS.title} /> : null}
+      {renderCreate ? (
+        <Sheet visible={creating} onClose={() => setCreating(false)} title={addPlaceholder.replace(/…$/, '')}>
+          {creating ? renderCreate(() => setCreating(false)) : null}
+        </Sheet>
+      ) : null}
 
       <Sheet visible={selected !== undefined} onClose={close} title={selected?.title ?? ''}>
         {selected && actionsFor !== null ? (

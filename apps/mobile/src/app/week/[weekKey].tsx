@@ -3,11 +3,10 @@ import { Redirect, router, Stack, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useWeekData } from '@/data/queries';
-import { addWeeklyTodo } from '@/data/repositories/checklists';
 import { setWeekNote } from '@/data/repositories/days';
 import { Checklist } from '@/features/checklist/Checklist';
 import { todoView } from '@/features/checklist/itemViews';
-import { TodoTargetSheet } from '@/features/checklist/TargetSheets';
+import { TodoCreateSheet, TodoTargetSheet } from '@/features/checklist/TargetSheets';
 import { DayColumn } from '@/features/day/DayColumn';
 import { HabitGrid } from '@/features/habits/HabitGrid';
 import { MiniCalendars } from '@/features/week/MiniCalendars';
@@ -75,7 +74,7 @@ function Week({ weekKey }: { weekKey: string }) {
           items={data.todos}
           views={new Map(data.todos.map((todo) => [todo.id, todoView(todo, range, data.counts)]))}
           addPlaceholder={t('week.addTodo')}
-          onAdd={(title) => addWeeklyTodo(plannerId, weekKey, title)}
+          renderCreate={(close) => <TodoCreateSheet plannerId={plannerId} weekKey={weekKey} onDone={close} />}
           renderTargetEditor={(item, close) => <TodoTargetSheet todo={item as WeeklyTodo} onDone={close} />}
         />
       </Card>

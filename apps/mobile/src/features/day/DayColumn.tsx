@@ -3,12 +3,11 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useDayData } from '@/data/queries';
-import { addTask } from '@/data/repositories/checklists';
 import { setDayNote, setFocus } from '@/data/repositories/days';
 import { removeLatestCompletion } from '@/data/repositories/completions';
 import { Checklist, DayCell } from '@/features/checklist/Checklist';
 import { taskView } from '@/features/checklist/itemViews';
-import { TaskTargetSheet } from '@/features/checklist/TargetSheets';
+import { TaskCreateSheet, TaskTargetSheet } from '@/features/checklist/TargetSheets';
 import { habitCell, habitStatus } from '@/features/habits/HabitGrid';
 import { formatFullDate, formatTime, formatWeekday, todayIso, upper } from '@/lib/format';
 import { useCanEdit, usePlanner, usePlannerId } from '@/state/planner';
@@ -104,7 +103,7 @@ export function DayColumn({ date, range, compact }: { date: IsoDate; range: Week
           items={tasks}
           views={taskViews}
           addPlaceholder={t('day.addTask')}
-          onAdd={(title) => addTask(plannerId, date, title)}
+          renderCreate={(close) => <TaskCreateSheet plannerId={plannerId} date={date} onDone={close} />}
           moveTargets={moveTargets}
           progressColor={color}
           renderTargetEditor={(item, close) => <TaskTargetSheet task={item as Task} onDone={close} />}
