@@ -20,7 +20,13 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "single",
+      "name": "Weekly Planner",
+      "shortName": "Weekly Plan",
+      "lang": "en",
+      "themeColor": "#FAF7F2",
+      "backgroundColor": "#FAF7F2"
     },
     "plugins": [
       [

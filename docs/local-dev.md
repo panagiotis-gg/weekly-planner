@@ -60,6 +60,10 @@ Then, in `.env`, change the hostnames `postgres`, `redis` and `mailpit` to `loca
 
 ## Mobile app
 
+### Install on iPhone
+
+See [deploy-web.md](deploy-web.md): free hosting on Cloudflare Pages, then **Add to Home Screen** in Safari.
+
 ### In your laptop's browser (quickest way to review)
 
 ```bash

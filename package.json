@@ -10,7 +10,8 @@
     "dev": "turbo run dev",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
-    "lint": "turbo run lint"
+    "lint": "turbo run lint",
+    "build:web": "turbo run build:web --filter=@planner/mobile"
   },
   "devDependencies": {
     "turbo": "2.11.10",

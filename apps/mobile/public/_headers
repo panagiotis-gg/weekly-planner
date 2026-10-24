@@ -1,0 +1,17 @@
+# Response headers for static hosting (Cloudflare Pages / Netlify format).
+
+# expo-sqlite on web needs SharedArrayBuffer, which requires a cross-origin isolated page.
+# require-corp (not credentialless) because Safari on iPhone supports it; all files are same-origin.
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: same-origin
+
+# The service worker must always be re-checked so updates reach installed apps.
+/sw.js
+  Cache-Control: no-cache
+
+# Build output file names contain content hashes, so they can be cached forever.
+/_expo/static/*
+  Cache-Control: public, max-age=31536000, immutable

@@ -44,6 +44,7 @@ Items marked **(derived)** follow from the answers but were not asked directly; 
 | D1 | **Cloud-agnostic Docker** (docker-compose for local dev; same images in production). |
 | D2 | **Internal testing first** (TestFlight / Play internal track), designed for **public store compliance later**. |
 | D3 | **Thousands of users** → stateless API (horizontally scalable), rate limiting, monitoring. |
+| D4 | **iPhone install as a web app (PWA)**, hosted free on **Cloudflare Pages** with automatic deploys from GitHub `main` (chosen by the user 2026-10-24, instead of a paid Apple Developer membership). Works offline via a service worker; data stays on the device. Native builds (EAS/TestFlight) remain possible later. See docs/deploy-web.md. |
 
 ## E. Offline support
 
