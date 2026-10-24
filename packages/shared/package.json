@@ -1,0 +1,42 @@
+{
+  "name": "@planner/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Domain logic shared by the mobile app and the API: schemas, week math, recurrence, progress, sync.",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "jest"
+  },
+  "dependencies": {
+    "uuid": "11.1.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/jest": "30.0.0",
+    "@types/node": "22.20.5",
+    "jest": "30.5.2",
+    "ts-jest": "29.4.15",
+    "tsup": "8.5.1",
+    "typescript": "5.9.3"
+  }
+}

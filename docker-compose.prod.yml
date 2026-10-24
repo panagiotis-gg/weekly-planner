@@ -1,0 +1,71 @@
+# Production-style stack using the slim runtime image (no watch mode, no Mailpit).
+# Cloud-agnostic: run on any Docker host, or use it as the reference for your orchestrator.
+# Expects a .env.production with real secrets and an external SMTP provider.
+#
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --scale api=3   (behind a load balancer)
+#
+# TLS is terminated by the load balancer / reverse proxy in front of `api`.
+
+name: weekly-planner-prod
+
+x-backend: &backend
+  build:
+    context: .
+    dockerfile: docker/api.Dockerfile
+    target: runtime
+  image: weekly-planner-api:${IMAGE_TAG:-latest}
+  env_file: .env.production
+  restart: always
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:17.6-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set in .env.production}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env.production}
+      POSTGRES_DB: ${POSTGRES_DB:?set in .env.production}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    <<: *backend
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/readyz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+
+  worker:
+    <<: *backend
+    command: ["node", "dist/worker.js"]
+
+volumes:
+  pgdata:
+  redisdata:

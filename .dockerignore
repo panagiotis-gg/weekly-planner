@@ -1,0 +1,14 @@
+.git
+.env
+.env.*
+!.env.example
+**/node_modules
+**/dist
+**/.turbo
+**/coverage
+docs
+# The mobile package.json stays (turbo prune reads the workspace), but not its native/build output.
+apps/mobile/ios
+apps/mobile/android
+apps/mobile/.expo
+apps/mobile/assets

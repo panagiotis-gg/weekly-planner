@@ -1,0 +1,44 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
+    },
+    "test:integration": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
+    "lint": {},
+    "dev": {
+      "dependsOn": ["^build"],
+      "passThroughEnv": [
+        "NODE_ENV", "LOG_LEVEL", "API_*", "DATABASE_URL", "REDIS_URL",
+        "JWT_*", "REFRESH_TOKEN_*", "GOOGLE_*", "APPLE_*",
+        "SMTP_*", "MAIL_FROM", "APP_LINK_BASE_URL",
+        "ACCOUNT_*", "INVITE_*", "SYNC_*", "TOMBSTONE_*", "SENTRY_*"
+      ],
+      "cache": false,
+      "persistent": true
+    },
+    "dev:worker": {
+      "dependsOn": ["^build"],
+      "with": ["@planner/shared#dev"],
+      "passThroughEnv": [
+        "NODE_ENV", "LOG_LEVEL", "API_*", "DATABASE_URL", "REDIS_URL",
+        "JWT_*", "REFRESH_TOKEN_*", "GOOGLE_*", "APPLE_*",
+        "SMTP_*", "MAIL_FROM", "APP_LINK_BASE_URL",
+        "ACCOUNT_*", "INVITE_*", "SYNC_*", "TOMBSTONE_*", "SENTRY_*"
+      ],
+      "cache": false,
+      "persistent": true
+    }
+  }
+}
