@@ -1,0 +1,39 @@
+diff --git a/web/WorkerChannel.ts b/web/WorkerChannel.ts
+index 2c5ff82..84188e0 100644
+--- a/web/WorkerChannel.ts
++++ b/web/WorkerChannel.ts
+@@ -124,24 +124,22 @@ export function invokeWorkerSync<T extends SQLiteWorkerMessageType & keyof Resul
+     resultBuffer,
+   });
+ 
+-  let i = 0;
++  // weekly-planner patch: time-based timeout. The original counted loop iterations; with
++  // Atomics.pause() (recent Safari/Chrome) 1,000,000 pauses can be only milliseconds, so slower
++  // devices (e.g. iPhone OPFS) hit "Sync operation timeout" on ordinary queries.
++  const SYNC_TIMEOUT_MS = 10_000;
++  const deadline = performance.now() + SYNC_TIMEOUT_MS;
+   // @ts-expect-error: Remove this when TypeScript supports Atomics.pause
+   const useAtomicsPause = typeof Atomics.pause === 'function';
+   while (Atomics.load(lock, 0) === PENDING) {
+-    ++i;
+-
+     if (useAtomicsPause) {
+-      if (i > 1_000_000) {
+-        throw new Error('Sync operation timeout');
+-      }
+       // @ts-expect-error: Remove this when TypeScript supports Atomics.pause
+       Atomics.pause();
+-    } else {
+-      // NOTE(kudo): Unfortunate for the busy loop,
+-      // because we don't have a way for main thread to yield its execution to other callbacks.
+-      if (i > 1000_000_000) {
+-        throw new Error('Sync operation timeout');
+-      }
++    }
++    // NOTE(kudo): Unfortunate for the busy loop,
++    // because we don't have a way for main thread to yield its execution to other callbacks.
++    if (performance.now() > deadline) {
++      throw new Error('Sync operation timeout');
+     }
+   }
+ 

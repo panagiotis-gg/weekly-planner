@@ -12,3 +12,8 @@ ignoredBuiltDependencies:
   - '@parcel/watcher'
   - '@scarf/scarf'
   - unrs-resolver
+
+# Local fixes to dependencies (pnpm patch format). expo-sqlite: time-based sync timeout on web,
+# see patches/expo-sqlite@58.0.14.patch.
+patchedDependencies:
+  expo-sqlite@58.0.14: patches/expo-sqlite@58.0.14.patch
