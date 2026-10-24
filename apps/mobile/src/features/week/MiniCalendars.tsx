@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { kvGet, kvSet } from '@/data/db/client';
-import { formatMonth, formatMonthDay, formatWeekday, todayIso } from '@/lib/format';
+import { formatMonth, formatMonthDay, formatWeekday, todayIso, upper } from '@/lib/format';
 import { Palette, usePalette } from '@/ui/theme';
 import { DayOverview, useCalendarOverview } from './useCalendarOverview';
 
@@ -80,7 +80,7 @@ export function MiniCalendars({
         {months.map(({ year, month }, monthIndex) => (
           <View key={`${year}-${month}`} style={styles.month}>
             <Text style={[styles.monthTitle, { color: p.text, backgroundColor: p.surfaceMuted }]}>
-              {formatMonth(year, month, true)}
+              {upper(formatMonth(year, month, true))}
             </Text>
             <View style={styles.week}>
               {range.days.map((d) => (
@@ -189,7 +189,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1.5,
-    textTransform: 'uppercase',
     textAlign: 'center',
     paddingVertical: 4,
     borderRadius: 6,

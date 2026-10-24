@@ -59,7 +59,7 @@ Items marked **(derived)** follow from the answers but were not asked directly; 
 |---|----------|
 | F1 | **Phone and tablet, all orientations.** Tablet gets a wider multi-column week layout. |
 | F2 | Phone: **swipe day-to-day** (focus, events, tasks, day note) plus a **Week screen** (mini calendars first, then habits, weekly to-dos, week note). The separate "Days" list was removed by the user on 2026-10-24: days open from the calendar. |
-| F3 | Dark mode: **light / dark / follow system**. Language: **English only, i18n-ready** (strings externalised). Time format: **follows device locale** (12h/24h). |
+| F3 | Dark mode: **light / dark / follow system**. Language: **English and Greek** (Greek added by the user 2026-10-24; was English only). The app follows the **device language** when it is Greek, otherwise English; dates use the same language. `pnpm test` checks both languages have every key. Time format: **follows device locale** (12h/24h). |
 | — | Event times stored as **local wall-clock time** (no time-zone shifting when travelling; all household members see the same wall time). |
 
 ## G. Non-functional

@@ -10,7 +10,7 @@ import { Checklist, DayCell } from '@/features/checklist/Checklist';
 import { taskView } from '@/features/checklist/itemViews';
 import { TaskTargetSheet } from '@/features/checklist/TargetSheets';
 import { habitCell, habitStatus } from '@/features/habits/HabitGrid';
-import { formatFullDate, formatTime, formatWeekday, todayIso } from '@/lib/format';
+import { formatFullDate, formatTime, formatWeekday, todayIso, upper } from '@/lib/format';
 import { useCanEdit, usePlanner, usePlannerId } from '@/state/planner';
 import { Card, EditableText, IconButton, SectionTitle, textStyles } from '@/ui/components';
 import { dayColor, usePalette } from '@/ui/theme';
@@ -33,7 +33,7 @@ export function DayColumn({ date, range, compact }: { date: IsoDate; range: Week
   return (
     <View style={[styles.column, compact && styles.compact]}>
       <View style={[styles.header, { backgroundColor: color }]}>
-        <Text style={[styles.dayName, { color: p.onDayColor }]}>{formatWeekday(date).toUpperCase()}</Text>
+        <Text style={[styles.dayName, { color: p.onDayColor }]}>{upper(formatWeekday(date))}</Text>
         <Text style={[styles.date, { color: p.onDayColor }]}>
           {formatFullDate(date)}
           {isToday ? ` · ${t('common.today')}` : ''}

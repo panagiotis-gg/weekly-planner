@@ -170,7 +170,7 @@ function EventEditorContent() {
       <Field value={title} onChangeText={setTitle} maxLength={TEXT_LIMITS.title} placeholder={t('event.titlePlaceholder')} accessibilityLabel={t('event.title')} />
 
       <Text style={text.muted}>{t('event.date')}</Text>
-      <Field value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" accessibilityLabel={t('event.date')} autoCapitalize="none" />
+      <Field value={date} onChangeText={setDate} placeholder={t('event.datePlaceholder')} accessibilityLabel={t('event.date')} autoCapitalize="none" />
 
       <View style={styles.row}>
         <Text style={text.body}>{t('event.allDay')}</Text>
@@ -220,7 +220,7 @@ function EventEditorContent() {
             <Chip label={t('event.endsAfter')} selected={endsMode === 'count'} onPress={() => setEndsMode('count')} />
           </View>
           {endsMode === 'until' ? (
-            <Field value={until} onChangeText={setUntil} placeholder="YYYY-MM-DD" accessibilityLabel={t('event.endsOn')} />
+            <Field value={until} onChangeText={setUntil} placeholder={t('event.datePlaceholder')} accessibilityLabel={t('event.endsOn')} />
           ) : null}
           {endsMode === 'count' ? (
             <View style={styles.row}>

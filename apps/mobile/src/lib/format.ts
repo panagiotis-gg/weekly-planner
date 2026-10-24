@@ -1,9 +1,20 @@
 import { getCalendars, getLocales } from 'expo-localization';
 import { IsoDate, makeDate, yearMonthDay } from '@planner/shared';
+import { language } from '@/i18n';
 
-// UI strings are English only (F3), so dates use English with the device's region (e.g. en-GR)
-// instead of mixing languages. Switch to the active i18n language once more locales exist.
-const locale = `en-${getLocales()[0]?.regionCode ?? 'US'}`;
+// Dates use the UI language (F3) with the device's region (e.g. el-GR, en-GR), so day and month
+// names always match the rest of the text.
+const locale = `${language}-${getLocales()[0]?.regionCode ?? (language === 'el' ? 'GR' : 'US')}`;
+
+/**
+ * Uppercase for headings in the UI language. Greek capitals drop their accents (ΤΕΤΑΡΤΗ, not
+ * ΤΕΤΆΡΤΗ), which neither toUpperCase nor CSS textTransform does reliably on every platform.
+ */
+export function upper(text: string): string {
+  const up = text.toLocaleUpperCase(language);
+  // Drop only the tonos (U+0301); the dialytika stays (ΜΑΪΟΥ).
+  return language === 'el' ? up.normalize('NFD').replace(/́/g, '').normalize('NFC') : up;
+}
 /** 12h/24h follows the device (DECISIONS F3). */
 const uses24h = getCalendars()[0]?.uses24hourClock ?? false;
 

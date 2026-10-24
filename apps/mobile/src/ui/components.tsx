@@ -11,6 +11,8 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import i18n from '@/i18n';
+import { upper } from '@/lib/format';
 import { Palette, usePalette } from './theme';
 
 export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
@@ -22,7 +24,7 @@ export function SectionTitle({ children, right }: { children: ReactNode; right?:
   const p = usePalette();
   return (
     <View style={styles.sectionRow}>
-      <Text style={[styles.sectionTitle, { color: p.textMuted }]}>{children}</Text>
+      <Text style={[styles.sectionTitle, { color: p.textMuted }]}>{typeof children === 'string' ? upper(children) : children}</Text>
       {right}
     </View>
   );
@@ -85,7 +87,7 @@ export function Counter({
       disabled={!onAdd}
       hitSlop={4}
       accessibilityRole="button"
-      accessibilityLabel={`${label}: ${count}${goal ? ` of ${goal}` : ''}. Add one`}
+      accessibilityLabel={goal ? i18n.t('a11y.counter', { label, count, goal }) : i18n.t('a11y.counterNoGoal', { label, count })}
       style={[
         styles.counter,
         compact && styles.counterCompact,
@@ -301,7 +303,7 @@ export function Sheet({
   const p = usePalette();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close">
+      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel={i18n.t('common.close')}>
         <Pressable style={[styles.sheet, { backgroundColor: p.surface, borderColor: p.border }]} onPress={() => undefined}>
           <Text style={[styles.sheetTitle, { color: p.text }]}>{title}</Text>
           {children}
@@ -321,7 +323,8 @@ export const textStyles = (p: Palette) =>
 const styles = StyleSheet.create({
   card: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, padding: 14, gap: 8 },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  sectionTitle: { fontSize: 12, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' },
+  // Uppercased in code (upper()), not with textTransform, so Greek capitals drop their accents.
+  sectionTitle: { fontSize: 12, fontWeight: '700', letterSpacing: 1.2 },
   checkbox: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   checkmark: { fontSize: 13, fontWeight: '800', lineHeight: 15 },
   counter: { minWidth: 40, height: 24, borderRadius: 12, borderWidth: 1, paddingHorizontal: 8, alignItems: 'center', justifyContent: 'center' },
