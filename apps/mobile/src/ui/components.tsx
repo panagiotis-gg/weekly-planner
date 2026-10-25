@@ -12,9 +12,9 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import i18n from '@/i18n';
 import { upper } from '@/lib/format';
-import { useKeyboardInset } from './keyboard';
 import { Palette, usePalette } from './theme';
 
 export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
@@ -328,11 +328,13 @@ export function Sheet({
   children: ReactNode;
 }) {
   const p = usePalette();
-  const keyboard = useKeyboardInset();
+  const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      {/* Lifted above the on-screen keyboard so Save / Cancel stay reachable. */}
-      <View style={[styles.backdrop, { paddingBottom: keyboard }]}>
+      {/* Anchored near the top and never moved: on iPhone Safari a dialog that shifts while the
+          keyboard opens or closes loses the tap (no click fires when the button moved under the
+          finger), and the first field near the top is never covered by the keyboard. */}
+      <View style={[styles.backdrop, { paddingTop: insets.top + 24 }]}>
         {/* The dimmed backdrop is a sibling behind the sheet, not a wrapper around it: nested
             pressables around text fields left the sheet's buttons unresponsive on iPhone Safari. */}
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel={i18n.t('common.close')} />
@@ -376,14 +378,13 @@ const styles = StyleSheet.create({
   editable: { fontSize: 15, paddingVertical: 4 },
   editableMultiline: { minHeight: 64, textAlignVertical: 'top' },
   addRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end', alignItems: 'center' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-start', alignItems: 'center', paddingHorizontal: 12 },
   sheet: {
     width: '100%',
     maxWidth: 520,
-    // Scrolls when the keyboard leaves little room, so the buttons can always be reached.
-    maxHeight: '90%',
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
+    // Scrolls when it's taller than the screen, so the buttons can always be reached.
+    maxHeight: '85%',
+    borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
   },

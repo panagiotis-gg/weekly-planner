@@ -55,13 +55,61 @@
         function resetScroll() {
           if (!isTextField(document.activeElement) && (window.scrollX || window.scrollY)) window.scrollTo(0, 0);
         }
+        // Delayed so it never lands between touchstart and click of the tap that blurred the field.
         document.addEventListener('focusout', function () {
-          setTimeout(resetScroll, 50);
+          setTimeout(resetScroll, 300);
         });
         if (window.visualViewport) {
           window.visualViewport.addEventListener('resize', function () {
-            setTimeout(resetScroll, 50);
+            setTimeout(resetScroll, 300);
           });
+        }
+      })();
+    </script>
+
+    <!-- Touch diagnostics (Settings → "Touch diagnostics"): an on-screen log of what Safari reports
+         for each tap, to debug taps that don't register. Off by default; never blocks touches. -->
+    <script>
+      (function () {
+        var enabled = false;
+        try {
+          enabled = localStorage.getItem('touchDiagnostics') === '1';
+        } catch (e) {}
+        if (!enabled) return;
+        var lines = [];
+        var panel;
+        function describe(el) {
+          if (!el || !el.tagName) return String(el);
+          var label = el.getAttribute && (el.getAttribute('aria-label') || '');
+          var text = (label || el.innerText || el.value || '').replace(/\s+/g, ' ').slice(0, 18);
+          return el.tagName.toLowerCase() + (el.getAttribute && el.getAttribute('role') ? '[' + el.getAttribute('role') + ']' : '') + ' "' + text + '"';
+        }
+        function log(type, e) {
+          var vv = window.visualViewport;
+          var t = e && e.changedTouches && e.changedTouches[0];
+          var y = t ? Math.round(t.clientY) : e && e.clientY != null ? Math.round(e.clientY) : '';
+          lines.unshift(
+            (performance.now() / 1000).toFixed(2) + ' ' + type + ' y=' + y +
+              ' sY=' + Math.round(window.scrollY) +
+              (vv ? ' vvTop=' + Math.round(vv.offsetTop) + ' vvH=' + Math.round(vv.height) : '') +
+              ' ' + describe(e && e.target),
+          );
+          lines.length = Math.min(lines.length, 14);
+          if (!panel) {
+            panel = document.createElement('pre');
+            panel.style.cssText =
+              'position:fixed;left:0;right:0;bottom:0;z-index:2147483647;margin:0;padding:4px 6px;' +
+              'font:10px/1.3 ui-monospace,monospace;background:rgba(0,0,0,.78);color:#9f9;' +
+              'pointer-events:none;white-space:pre-wrap;max-height:40vh;overflow:hidden';
+            document.body.appendChild(panel);
+          }
+          panel.textContent = lines.join('\n');
+        }
+        ['touchstart', 'touchend', 'touchcancel', 'click', 'focusin', 'focusout'].forEach(function (type) {
+          document.addEventListener(type, function (e) { log(type, e); }, { capture: true, passive: true });
+        });
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener('resize', function () { log('vv-resize'); });
         }
       })();
     </script>

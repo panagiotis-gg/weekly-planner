@@ -1,6 +1,6 @@
 import { weekRange } from '@planner/shared';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { setDayColor, setWeekStartDay } from '@/data/repositories/planners';
 import { formatWeekday } from '@/lib/format';
 import { useCanEdit, usePlanner, PlannerGate } from '@/state/planner';
@@ -80,12 +80,56 @@ function SettingsContent() {
         ) : null}
       </Card>
 
+      {Platform.OS === 'web' ? <TouchDiagnosticsCard /> : null}
+
       <Text style={[text.muted, styles.footer]}>{t('settings.localOnly')}</Text>
     </ScrollView>
   );
 }
 
+const DIAGNOSTICS_KEY = 'touchDiagnostics';
+
+function readDiagnostics(): boolean {
+  try {
+    return window.localStorage.getItem(DIAGNOSTICS_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Web only: an on-screen log of what the browser reports for each tap (public/index.html), to debug
+ * taps that don't register on iPhone Safari. Stored on this device; reloads to take effect.
+ */
+function TouchDiagnosticsCard() {
+  const { t } = useTranslation();
+  const p = usePalette();
+  const text = textStyles(p);
+  const enabled = readDiagnostics();
+  const toggle = (on: boolean) => {
+    try {
+      if (on) window.localStorage.setItem(DIAGNOSTICS_KEY, '1');
+      else window.localStorage.removeItem(DIAGNOSTICS_KEY);
+    } catch {
+      return;
+    }
+    window.location.reload();
+  };
+  return (
+    <Card>
+      <SectionTitle>{t('settings.diagnostics')}</SectionTitle>
+      <View style={styles.switchRow}>
+        <Text style={[text.body, styles.flex]}>{t('settings.touchDiagnostics')}</Text>
+        <Switch value={enabled} onValueChange={toggle} accessibilityLabel={t('settings.touchDiagnostics')} />
+      </View>
+      <Text style={text.muted}>{t('settings.touchDiagnosticsHint')}</Text>
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
+  switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  flex: { flex: 1 },
   page: { padding: 16, gap: 12, maxWidth: 640, width: '100%', alignSelf: 'center' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   colorRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },

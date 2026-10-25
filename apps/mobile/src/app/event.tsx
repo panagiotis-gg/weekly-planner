@@ -32,7 +32,6 @@ import { selectRows, WriteError } from '@/data/write';
 import { formatWeekday, todayIso } from '@/lib/format';
 import { usePlanner, usePlannerId, PlannerGate } from '@/state/planner';
 import { Button, Chip, Field, textStyles } from '@/ui/components';
-import { useKeyboardInset } from '@/ui/keyboard';
 import { usePalette } from '@/ui/theme';
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -59,8 +58,6 @@ function EventEditorContent() {
   const text = textStyles(p);
   const plannerId = usePlannerId();
   const planner = usePlanner();
-  // Room for the on-screen keyboard, so Save / Cancel can be scrolled above it.
-  const keyboard = useKeyboardInset();
   const params = useLocalSearchParams<{ date?: string; eventId?: string; originalDate?: string }>();
 
   const event = params.eventId ? getEvent(plannerId, params.eventId) : null;
@@ -166,7 +163,7 @@ function EventEditorContent() {
   };
 
   return (
-    <ScrollView contentContainerStyle={[styles.form, { paddingBottom: 16 + keyboard }]} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
       <Stack.Screen options={{ title: event ? t('event.edit') : t('event.new') }} />
 
       <Text style={text.muted}>{t('event.title')}</Text>
@@ -273,7 +270,9 @@ function EventEditorContent() {
 }
 
 const styles = StyleSheet.create({
-  form: { padding: 16, gap: 10, maxWidth: 560, width: '100%', alignSelf: 'center' },
+  // Fixed bottom room (not keyboard-dependent, so nothing shifts under a tap on iPhone):
+  // Save / Cancel can always be scrolled above the on-screen keyboard.
+  form: { padding: 16, paddingBottom: 320, gap: 10, maxWidth: 560, width: '100%', alignSelf: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, justifyContent: 'space-between' },
   flex: { flex: 1, gap: 4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

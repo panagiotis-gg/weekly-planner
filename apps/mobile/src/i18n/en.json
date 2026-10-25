@@ -99,7 +99,10 @@
     "themeDark": "Dark",
     "dayColors": "Day colours",
     "resetColors": "Reset to defaults",
-    "localOnly": "Your planner is saved on this device. Sign-in and sync come in a later version."
+    "localOnly": "Your planner is saved on this device. Sign-in and sync come in a later version.",
+    "diagnostics": "Diagnostics",
+    "touchDiagnostics": "Touch diagnostics",
+    "touchDiagnosticsHint": "Shows a log of taps at the bottom of the screen, to help find taps that don't register. Turn it off when done."
   },
   "errors": {
     "ALL_DAY_HAS_TIMES": "All-day events can't have times.",
