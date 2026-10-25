@@ -12,7 +12,7 @@ crons = ["* * * * *"]
 [[d1_databases]]
 binding = "DB"
 database_name = "weekly-planner-push"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "ce0a118d-dcca-43a3-b5f9-0c02276162a1"
 
 [vars]
 # The planner web app's address (Cloudflare Pages). Only it may call this service.
