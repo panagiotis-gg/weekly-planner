@@ -114,6 +114,7 @@
             timer: setTimeout(function () {
               pending = null;
               if (!target.isConnected) return note('fallback skip: target gone');
+              note('fallback fired' + (target.disabled ? ' (button disabled)' : ''));
               swallowUntil = Date.now() + 600;
               window.__syntheticClick = true;
               target.click();
@@ -181,8 +182,15 @@
         window.addEventListener('unhandledrejection', function (e) {
           log('ERROR (promise) ' + String((e.reason && e.reason.message) || e.reason).slice(0, 120));
         });
+        // A frozen page can't log while frozen; a timer that runs late shows how long it was stuck.
+        var lastTick = performance.now();
+        setInterval(function () {
+          var now = performance.now();
+          if (now - lastTick > 1000) log('STALL page frozen ' + Math.round(now - lastTick) + 'ms');
+          lastTick = now;
+        }, 250);
         // The panel needs <body>; the version is on the Settings page.
-        document.addEventListener('DOMContentLoaded', function () { log('diagnostics on (fallback v3)'); });
+        document.addEventListener('DOMContentLoaded', function () { log('diagnostics on (v4: stalls, slow DB)'); });
         ['touchstart', 'touchend', 'touchcancel', 'click', 'focusin', 'focusout'].forEach(function (type) {
           document.addEventListener(type, function (e) { log(type === 'click' && !e.isTrusted ? 'click(fallback)' : type, e); }, { capture: true, passive: true });
         });
