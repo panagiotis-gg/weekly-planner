@@ -2,6 +2,7 @@ import { ReactNode, useState } from 'react';
 import {
   Modal,
   Pressable,
+  ScrollView,
   StyleProp,
   StyleSheet,
   Text,
@@ -13,6 +14,7 @@ import {
 } from 'react-native';
 import i18n from '@/i18n';
 import { upper } from '@/lib/format';
+import { useKeyboardInset } from './keyboard';
 import { Palette, usePalette } from './theme';
 
 export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
@@ -326,14 +328,21 @@ export function Sheet({
   children: ReactNode;
 }) {
   const p = usePalette();
+  const keyboard = useKeyboardInset();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel={i18n.t('common.close')}>
-        <Pressable style={[styles.sheet, { backgroundColor: p.surface, borderColor: p.border }]} onPress={() => undefined}>
-          <Text style={[styles.sheetTitle, { color: p.text }]}>{title}</Text>
-          {children}
-        </Pressable>
-      </Pressable>
+      {/* Lifted above the on-screen keyboard so Save / Cancel stay reachable. */}
+      <View style={[styles.backdrop, { paddingBottom: keyboard }]}>
+        {/* The dimmed backdrop is a sibling behind the sheet, not a wrapper around it: nested
+            pressables around text fields left the sheet's buttons unresponsive on iPhone Safari. */}
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel={i18n.t('common.close')} />
+        <View style={[styles.sheet, { backgroundColor: p.surface, borderColor: p.border }]}>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.sheetContent}>
+            <Text style={[styles.sheetTitle, { color: p.text }]}>{title}</Text>
+            {children}
+          </ScrollView>
+        </View>
+      </View>
     </Modal>
   );
 }
@@ -371,11 +380,13 @@ const styles = StyleSheet.create({
   sheet: {
     width: '100%',
     maxWidth: 520,
+    // Scrolls when the keyboard leaves little room, so the buttons can always be reached.
+    maxHeight: '90%',
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
-    padding: 18,
-    gap: 12,
+    overflow: 'hidden',
   },
+  sheetContent: { padding: 18, gap: 12 },
   sheetTitle: { fontSize: 17, fontWeight: '700' },
 });

@@ -43,6 +43,29 @@
       }
     </style>
 
+    <!-- iPhone Safari scrolls the whole page to show a focused field and often leaves it scrolled
+         after the keyboard closes. The app never scrolls the page itself (body overflow: hidden),
+         and a leftover offset makes taps on fixed layers such as dialogs land in the wrong place,
+         so reset it once no text field is focused. -->
+    <script>
+      (function () {
+        function isTextField(el) {
+          return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+        }
+        function resetScroll() {
+          if (!isTextField(document.activeElement) && (window.scrollX || window.scrollY)) window.scrollTo(0, 0);
+        }
+        document.addEventListener('focusout', function () {
+          setTimeout(resetScroll, 50);
+        });
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener('resize', function () {
+            setTimeout(resetScroll, 50);
+          });
+        }
+      })();
+    </script>
+
     <!-- Offline support: the service worker exists only in the production build (scripts/build-sw.js). -->
     <script>
       if ('serviceWorker' in navigator) {
