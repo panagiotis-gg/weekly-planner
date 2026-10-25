@@ -5,7 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { deleteItem, moveTaskToDate, moveWithinList, renameItem } from '@/data/repositories/checklists';
 import { countCompletionsOutside } from '@/data/repositories/completions';
 import { formatMonthDay, formatWeekday } from '@/lib/format';
-import { useCanEdit } from '@/state/planner';
+import { useCanEdit, useDayColorFor } from '@/state/planner';
 import { AddButton, AddRow, Button, Checkbox, Counter, EditableText, IconButton, ProgressBar, Sheet, textStyles } from '@/ui/components';
 import { confirm } from '@/ui/confirm';
 import { usePalette } from '@/ui/theme';
@@ -13,12 +13,13 @@ import { DayCellView, ItemView } from './itemViews';
 
 type Item = Task | WeeklyTodo;
 
-export function DayCell({ cell, label, compact }: { cell: DayCellView; label: string; compact?: boolean }) {
+/** One day's checkbox or counter, in that day's colour when given. */
+export function DayCell({ cell, label, compact, color }: { cell: DayCellView; label: string; compact?: boolean; color?: string }) {
   const canEdit = useCanEdit();
   return cell.kind === 'check' ? (
-    <Checkbox checked={cell.met} label={label} onToggle={canEdit ? cell.onPress : undefined} />
+    <Checkbox checked={cell.met} label={label} color={color} onToggle={canEdit ? cell.onPress : undefined} />
   ) : (
-    <Counter count={cell.count} goal={cell.goal} met={cell.met} label={label} compact={compact} onAdd={canEdit ? cell.onPress : undefined} />
+    <Counter count={cell.count} goal={cell.goal} met={cell.met} label={label} compact={compact} color={color} onAdd={canEdit ? cell.onPress : undefined} />
   );
 }
 
@@ -35,6 +36,7 @@ export function Checklist({
   addPlaceholder,
   moveTargets,
   progressColor,
+  color,
   renderTargetEditor,
   renderCreate,
 }: {
@@ -49,6 +51,8 @@ export function Checklist({
   /** Dates a task can be moved to (tasks only). */
   moveTargets?: IsoDate[];
   progressColor?: string;
+  /** Day colour for the rows' checkboxes and counters (a day's tasks). */
+  color?: string;
   /** Target editor shown inside the item menu. */
   renderTargetEditor?: (item: Item, close: () => void) => ReactNode;
 }) {
@@ -56,6 +60,7 @@ export function Checklist({
   const p = usePalette();
   const text = textStyles(p);
   const canEdit = useCanEdit();
+  const colorFor = useDayColorFor();
   const [actionsFor, setActionsFor] = useState<number | null>(null);
   const [editingTarget, setEditingTarget] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -87,9 +92,9 @@ export function Checklist({
           <View key={item.id} style={styles.item}>
             <View style={styles.row}>
               {view.control === 'done' ? (
-                <Checkbox checked={view.checked} label={item.title} onToggle={canEdit ? view.onToggle : undefined} />
+                <Checkbox checked={view.checked} label={item.title} color={color} onToggle={canEdit ? view.onToggle : undefined} />
               ) : view.control === 'cell' && view.cell ? (
-                <DayCell cell={view.cell} label={item.title} />
+                <DayCell cell={view.cell} label={item.title} color={color} />
               ) : null}
               <View style={styles.titleCol}>
                 <EditableText
@@ -109,7 +114,7 @@ export function Checklist({
                 {view.strip.map((cell) => (
                   <View key={cell.date} style={styles.stripCell}>
                     <Text style={[styles.stripDay, { color: p.textMuted }]}>{formatWeekday(cell.date, 'narrow')}</Text>
-                    <DayCell cell={cell} label={`${item.title} ${formatWeekday(cell.date, 'short')}`} compact />
+                    <DayCell cell={cell} label={`${item.title} ${formatWeekday(cell.date, 'short')}`} compact color={colorFor(cell.date)} />
                   </View>
                 ))}
               </View>

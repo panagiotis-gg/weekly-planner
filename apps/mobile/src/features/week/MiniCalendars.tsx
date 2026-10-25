@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { kvGet, kvSet } from '@/data/db/client';
+import { useDayColorFor } from '@/state/planner';
 import { formatMonth, formatMonthDay, formatWeekday, todayIso, upper } from '@/lib/format';
 import { Palette, usePalette } from '@/ui/theme';
 import { DayOverview, useCalendarOverview } from './useCalendarOverview';
@@ -15,7 +16,7 @@ const RING = 30;
 const STROKE = 2;
 
 /** Task progress ring around the date number; only drawn for days with tasks. */
-function ProgressRing({ percent, p }: { percent: number; p: Palette }) {
+function ProgressRing({ percent, p, color }: { percent: number; p: Palette; color: string }) {
   const r = (RING - STROKE) / 2;
   const c = 2 * Math.PI * r;
   return (
@@ -26,7 +27,7 @@ function ProgressRing({ percent, p }: { percent: number; p: Palette }) {
           cx={RING / 2}
           cy={RING / 2}
           r={r}
-          stroke={p.accent}
+          stroke={color}
           strokeWidth={STROKE}
           fill="none"
           strokeLinecap="round"
@@ -60,6 +61,7 @@ export function MiniCalendars({
   const startDay = range.start === range.weekKey ? 1 : 7;
   const today = todayIso();
   const overview = useCalendarOverview(plannerId, range, habitRows);
+  const colorFor = useDayColorFor();
   const [expanded, setExpanded] = useState(() => kvGet(EXPANDED_KEY) === '1');
   const toggle = () => {
     kvSet(EXPANDED_KEY, expanded ? '0' : '1');
@@ -111,7 +113,7 @@ export function MiniCalendars({
                           style={styles.cell}
                         >
                           <View style={styles.ringBox}>
-                            {info?.taskPercent != null ? <ProgressRing percent={info.taskPercent} p={p} /> : null}
+                            {info?.taskPercent != null ? <ProgressRing percent={info.taskPercent} p={p} color={colorFor(date)} /> : null}
                             <Text
                               style={{
                                 // Today is marked by colour (user request), not by a ring or underline.
@@ -123,7 +125,7 @@ export function MiniCalendars({
                               {Number(date.slice(8))}
                             </Text>
                           </View>
-                          <View style={[styles.dot, info?.hasEvents && { backgroundColor: p.accent }]} />
+                          <View style={[styles.dot, info?.hasEvents && { backgroundColor: colorFor(date) }]} />
                         </Pressable>
                       );
                     })}

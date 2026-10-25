@@ -35,13 +35,17 @@ export function Checkbox({
   onToggle,
   disabled,
   label,
+  color,
 }: {
   checked: boolean;
   onToggle?: () => void;
   disabled?: boolean;
   label: string;
+  /** Day colour: border and fill use it; the checkmark uses the dark on-day text colour. */
+  color?: string;
 }) {
   const p = usePalette();
+  const fill = color ?? p.accent;
   return (
     <Pressable
       onPress={onToggle}
@@ -52,11 +56,11 @@ export function Checkbox({
       accessibilityLabel={label}
       style={[
         styles.checkbox,
-        { borderColor: checked ? p.accent : p.border, backgroundColor: checked ? p.accent : 'transparent' },
+        { borderColor: checked || color ? fill : p.border, backgroundColor: checked ? fill : 'transparent' },
         disabled && { opacity: 0.35 },
       ]}
     >
-      {checked ? <Text style={[styles.checkmark, { color: p.onAccent }]}>✓</Text> : null}
+      {checked ? <Text style={[styles.checkmark, { color: color ? p.onDayColor : p.onAccent }]}>✓</Text> : null}
     </Pressable>
   );
 }
@@ -72,6 +76,7 @@ export function Counter({
   onAdd,
   label,
   compact,
+  color,
 }: {
   count: number;
   goal: number | null;
@@ -79,8 +84,11 @@ export function Counter({
   onAdd?: () => void;
   label: string;
   compact?: boolean;
+  /** Day colour: border and (when met) fill use it; text uses the dark on-day colour. */
+  color?: string;
 }) {
   const p = usePalette();
+  const fill = color ?? p.accent;
   return (
     <Pressable
       onPress={onAdd}
@@ -91,10 +99,16 @@ export function Counter({
       style={[
         styles.counter,
         compact && styles.counterCompact,
-        { borderColor: met ? p.accent : p.border, backgroundColor: met ? p.accent : 'transparent' },
+        { borderColor: met || color ? fill : p.border, backgroundColor: met ? fill : 'transparent' },
       ]}
     >
-      <Text style={{ color: met ? p.onAccent : count > 0 ? p.text : p.textMuted, fontSize: compact ? 11 : 13, fontVariant: ['tabular-nums'] }}>
+      <Text
+        style={{
+          color: met ? (color ? p.onDayColor : p.onAccent) : count > 0 ? p.text : p.textMuted,
+          fontSize: compact ? 11 : 13,
+          fontVariant: ['tabular-nums'],
+        }}
+      >
         {goal ? `${count}/${goal}` : count}
       </Text>
     </Pressable>

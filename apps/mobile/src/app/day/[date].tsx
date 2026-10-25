@@ -1,61 +1,54 @@
-import { addDays, diffDays, IsoDate, isValidIsoDate, weekKeyOf, weekRange } from '@planner/shared';
+import { addDays, IsoDate, isValidIsoDate, weekKeyOf, weekRange } from '@planner/shared';
 import { Redirect, router, Stack, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, FlatListProps, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { PanResponder, ScrollView, StyleSheet, View } from 'react-native';
 import { DayColumn } from '@/features/day/DayColumn';
 import { formatWeekday, todayIso } from '@/lib/format';
-import { usePlanner, PlannerGate } from '@/state/planner';
+import { PlannerGate, usePlanner } from '@/state/planner';
 import { IconButton } from '@/ui/components';
 import { usePalette } from '@/ui/theme';
 
-/** Days reachable by swiping from the opened date, in each direction. */
-const SPAN = 366;
-
-type ViewableChange = Parameters<NonNullable<FlatListProps<IsoDate>['onViewableItemsChanged']>>[0];
+/** Horizontal distance (px) a swipe must travel to change the day. */
+const SWIPE_DISTANCE = 60;
 
 function DayScreenContent() {
   const { date } = useLocalSearchParams<{ date: string }>();
   if (!date || !isValidIsoDate(date)) return <Redirect href={{ pathname: '/day/[date]', params: { date: todayIso() } }} />;
-  return <DayPager initialDate={date} />;
+  return <DayPage date={date} />;
 }
 
-/** Swipe day to day (DECISIONS F2), crossing week boundaries; arrows for mouse and keyboard users. */
-function DayPager({ initialDate }: { initialDate: IsoDate }) {
+/**
+ * One day, driven only by the URL (DECISIONS F2). Swiping left/right or the ‹ › arrows move to the
+ * next/previous day by changing the URL, crossing week boundaries.
+ *
+ * Deliberately not a scroll-positioned horizontal list: on iPhone Safari that list reported the
+ * previous day while positioning itself, and writing it back into the URL stepped back endlessly.
+ * Here nothing writes the URL except an explicit swipe or tap, so there is no loop.
+ */
+function DayPage({ date }: { date: IsoDate }) {
   const { t } = useTranslation();
   const p = usePalette();
   const planner = usePlanner();
-  const { width } = useWindowDimensions();
-  const listRef = useRef<FlatList<IsoDate>>(null);
-  // The list is anchored on the date it was opened with; the URL follows the visible page.
-  const [anchor] = useState(initialDate);
-  const days = useMemo(() => Array.from({ length: SPAN * 2 + 1 }, (_, i) => addDays(anchor, i - SPAN)), [anchor]);
-  const [current, setCurrent] = useState(initialDate);
+  const weekKey = weekKeyOf(date, planner.weekStartDay);
 
-  // FlatList requires onViewableItemsChanged to keep the same identity for its lifetime.
-  const [onViewable] = useState(() => ({ viewableItems }: ViewableChange) => {
-    const visible = viewableItems[0]?.item;
-    if (visible) {
-      setCurrent(visible);
-      router.setParams({ date: visible });
-    }
-  });
-
-  const go = useCallback(
-    (step: number) => {
-      const index = SPAN + diffDays(current, anchor) + step;
-      if (index >= 0 && index < days.length) listRef.current?.scrollToIndex({ index, animated: true });
-    },
-    [current, anchor, days.length],
-  );
-
-  const weekKey = weekKeyOf(current, planner.weekStartDay);
+  const swipe = useMemo(() => {
+    const go = (step: number) => router.setParams({ date: addDays(date, step) });
+    return PanResponder.create({
+      // Claim only clearly horizontal drags, so vertical scrolling of the day keeps working.
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 24 && Math.abs(g.dx) > Math.abs(g.dy) * 2,
+      onPanResponderRelease: (_, g) => {
+        if (g.dx <= -SWIPE_DISTANCE) go(1);
+        else if (g.dx >= SWIPE_DISTANCE) go(-1);
+      },
+    });
+  }, [date]);
 
   return (
-    <View style={styles.flex}>
+    <View style={styles.flex} {...swipe.panHandlers}>
       <Stack.Screen
         options={{
-          title: formatWeekday(current),
+          title: formatWeekday(date),
           headerLeft: () => (
             <IconButton
               glyph={`‹ ${t('day.backToWeek')}`}
@@ -67,32 +60,16 @@ function DayPager({ initialDate }: { initialDate: IsoDate }) {
           ),
           headerRight: () => (
             <View style={styles.arrows}>
-              <IconButton glyph="‹" size={24} label={t('common.previous')} onPress={() => go(-1)} />
-              <IconButton glyph="›" size={24} label={t('common.next')} onPress={() => go(1)} />
+              <IconButton glyph="‹" size={24} label={t('common.previous')} onPress={() => router.setParams({ date: addDays(date, -1) })} />
+              <IconButton glyph="›" size={24} label={t('common.next')} onPress={() => router.setParams({ date: addDays(date, 1) })} />
             </View>
           ),
         }}
       />
-      <FlatList
-        ref={listRef}
-        data={days}
-        keyExtractor={(d) => d}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        initialScrollIndex={SPAN}
-        getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
-        windowSize={3}
-        initialNumToRender={1}
-        maxToRenderPerBatch={2}
-        viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
-        onViewableItemsChanged={onViewable}
-        renderItem={({ item }) => (
-          <ScrollView style={{ width }} contentContainerStyle={styles.page}>
-            <DayColumn date={item} range={weekRange(weekKeyOf(item, planner.weekStartDay), planner.weekStartDay)} />
-          </ScrollView>
-        )}
-      />
+      {/* key: a new day starts scrolled to the top. */}
+      <ScrollView key={date} contentContainerStyle={styles.page}>
+        <DayColumn date={date} range={weekRange(weekKey, planner.weekStartDay)} />
+      </ScrollView>
     </View>
   );
 }

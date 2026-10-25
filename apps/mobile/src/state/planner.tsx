@@ -4,7 +4,8 @@ import { useLiveQuery } from '@/data/changes';
 import { initDb } from '@/data/db/client';
 import { ensureLocalPlanner, getPlanner, LocalPlanner } from '@/data/repositories/planners';
 import i18n from '@/i18n';
-import { loadThemePreference, usePalette } from '@/ui/theme';
+import { IsoDate, isoWeekday } from '@planner/shared';
+import { dayColor, loadThemePreference, usePalette } from '@/ui/theme';
 
 type Boot = { status: 'loading' } | { status: 'ready'; plannerId: string } | { status: 'error'; message: string };
 
@@ -67,6 +68,13 @@ export function usePlannerId(): string {
 export function usePlanner(): LocalPlanner {
   const id = usePlannerId();
   return useLiveQuery(() => getPlanner(id));
+}
+
+/** Colour of a date's weekday (planner override or default pastel, darker in dark mode). */
+export function useDayColorFor(): (date: IsoDate) => string {
+  const p = usePalette();
+  const planner = usePlanner();
+  return (date) => dayColor(p, isoWeekday(date), planner.dayColors);
 }
 
 /** Viewers see household planners read-only (C3); the local personal planner is always editable. */

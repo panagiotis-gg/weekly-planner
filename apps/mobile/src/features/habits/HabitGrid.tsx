@@ -35,7 +35,7 @@ import { DayCell } from '@/features/checklist/Checklist';
 import { DayCellView, summaryText } from '@/features/checklist/itemViews';
 import { TargetEditor } from '@/features/targets/TargetEditor';
 import { formatWeekday } from '@/lib/format';
-import { useCanEdit, usePlannerId } from '@/state/planner';
+import { useCanEdit, useDayColorFor, usePlannerId } from '@/state/planner';
 import { AddButton, Button, Chip, Field, ProgressBar, Sheet, textStyles } from '@/ui/components';
 import { confirm } from '@/ui/confirm';
 import { usePalette } from '@/ui/theme';
@@ -80,6 +80,7 @@ export function HabitGrid({
   const text = textStyles(p);
   const plannerId = usePlannerId();
   const canEdit = useCanEdit();
+  const colorFor = useDayColorFor();
   // null = closed, 'new' = create dialog, a habit = edit dialog.
   const [editing, setEditing] = useState<Habit | 'new' | null>(null);
   const byId = new Map(habits.map((h) => [h.id, h]));
@@ -115,7 +116,7 @@ export function HabitGrid({
                 return (
                   <View key={date} style={styles.cell}>
                     {cell ? (
-                      <DayCell cell={cell} label={`${habit.name} ${formatWeekday(date, 'short')}`} compact />
+                      <DayCell cell={cell} label={`${habit.name} ${formatWeekday(date, 'short')}`} compact color={colorFor(date)} />
                     ) : (
                       <Text style={{ color: p.border }} accessibilityLabel={t('habit.notScheduled')}>
                         –

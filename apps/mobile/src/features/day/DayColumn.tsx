@@ -89,7 +89,7 @@ export function DayColumn({ date, range, compact }: { date: IsoDate; range: Week
                 {cell && cell.kind === 'counter' && cell.count > 0 && canEdit ? (
                   <IconButton glyph="−" size={18} label={t('target.undoLastTap')} onPress={() => removeLatestCompletion(habit.plannerId, habit.id, date)} />
                 ) : null}
-                {cell ? <DayCell cell={cell} label={habit.name} /> : null}
+                {cell ? <DayCell cell={cell} label={habit.name} color={color} /> : null}
               </View>
             );
           })}
@@ -106,6 +106,7 @@ export function DayColumn({ date, range, compact }: { date: IsoDate; range: Week
           renderCreate={(close) => <TaskCreateSheet plannerId={plannerId} date={date} onDone={close} />}
           moveTargets={moveTargets}
           progressColor={color}
+          color={color}
           renderTargetEditor={(item, close) => <TaskTargetSheet task={item as Task} onDone={close} />}
         />
       </Card>
