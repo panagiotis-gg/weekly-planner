@@ -90,7 +90,8 @@
       ],
       "outputs": [
         "dist/**"
-      ]
+      ],
+      "cache": false
     }
   }
 }

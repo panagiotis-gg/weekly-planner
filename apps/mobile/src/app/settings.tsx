@@ -1,4 +1,6 @@
 import { weekRange } from '@planner/shared';
+import Constants from 'expo-constants';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { setDayColor, setWeekStartDay } from '@/data/repositories/planners';
@@ -83,8 +85,20 @@ function SettingsContent() {
       {Platform.OS === 'web' ? <TouchDiagnosticsCard /> : null}
 
       <Text style={[text.muted, styles.footer]}>{t('settings.localOnly')}</Text>
+      <Text style={[text.muted, styles.version]}>{versionLabel(t)}</Text>
     </ScrollView>
   );
+}
+
+/** App version plus the commit and time of the build (app.config.js), to tell which deploy is running. */
+function versionLabel(t: TFunction): string {
+  const build = (Constants.expoConfig?.extra?.build ?? {}) as { commit?: string; time?: string };
+  const time = build.time ? new Date(build.time) : null;
+  return t('settings.version', {
+    version: Constants.expoConfig?.version ?? '',
+    commit: build.commit ?? 'unknown',
+    date: time ? `${time.toLocaleDateString()} ${time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '',
+  });
 }
 
 const DIAGNOSTICS_KEY = 'touchDiagnostics';
@@ -137,6 +151,7 @@ const styles = StyleSheet.create({
   swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1 },
   swatch: { width: 24, height: 24, borderRadius: 12, borderWidth: 2 },
   footer: { textAlign: 'center', marginTop: 8 },
+  version: { textAlign: 'center', fontSize: 12 },
 });
 
 /** Waits for the local database before rendering (see PlannerGate). */

@@ -39,7 +39,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
     "test": "node scripts/check-i18n.js",
-    "build:web": "expo export -p web && node scripts/build-sw.js",
+    "build:web": "expo export -p web --clear && node scripts/build-sw.js",
     "icons": "node scripts/make-icons.js",
     "serve:web": "node scripts/serve-dist.js"
   },

@@ -102,7 +102,8 @@
     "localOnly": "Your planner is saved on this device. Sign-in and sync come in a later version.",
     "diagnostics": "Diagnostics",
     "touchDiagnostics": "Touch diagnostics",
-    "touchDiagnosticsHint": "Shows a log of taps at the bottom of the screen, to help find taps that don't register. Turn it off when done."
+    "touchDiagnosticsHint": "Shows a log of taps at the bottom of the screen, to help find taps that don't register. Turn it off when done.",
+    "version": "Version {{version}} ({{commit}}, {{date}})"
   },
   "errors": {
     "ALL_DAY_HAS_TIMES": "All-day events can't have times.",
