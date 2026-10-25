@@ -28,8 +28,11 @@ type SyncMethod = 'getFirstSync' | 'getAllSync' | 'runSync' | 'execSync';
  * slow one freezes taps. Reports slow calls to the touch diagnostics log (public/index.html).
  */
 function reportSlowCalls(database: SQLiteDatabase): void {
-  const report = (globalThis as { __touchDiag?: (msg: string) => void }).__touchDiag;
+  const g = globalThis as { __touchDiag?: (msg: string) => void; __dbStats?: { calls: number; ms: number; max: number } };
+  const report = g.__touchDiag;
   if (!report) return;
+  // Running totals: many quick calls can add up to a freeze that no single slow call shows.
+  const stats = (g.__dbStats = { calls: 0, ms: 0, max: 0 });
   for (const name of ['getFirstSync', 'getAllSync', 'runSync', 'execSync'] as SyncMethod[]) {
     const original = (database[name] as (...args: unknown[]) => unknown).bind(database);
     (database as unknown as Record<SyncMethod, (...args: unknown[]) => unknown>)[name] = (...args: unknown[]) => {
@@ -38,6 +41,9 @@ function reportSlowCalls(database: SQLiteDatabase): void {
         return original(...args);
       } finally {
         const ms = performance.now() - started;
+        stats.calls++;
+        stats.ms += ms;
+        stats.max = Math.max(stats.max, ms);
         if (ms > SLOW_CALL_MS) report(`DB slow ${Math.round(ms)}ms ${name} ${String(args[0]).replace(/\s+/g, ' ').slice(0, 50)}`);
       }
     };

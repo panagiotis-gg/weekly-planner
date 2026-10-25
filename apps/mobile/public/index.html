@@ -148,6 +148,25 @@
         if (!enabled) return;
         var lines = [];
         var panel;
+        // Worst values since the page loaded, pinned above the rolling log so they never scroll away.
+        var worst = { stall: 0, lag: 0 };
+        function summary() {
+          var db = window.__dbStats;
+          return 'MAX stall=' + Math.round(worst.stall) + 'ms touchLag=' + Math.round(worst.lag) + 'ms' +
+            (db ? ' | DB ' + db.calls + ' calls ' + Math.round(db.ms) + 'ms max=' + Math.round(db.max) + 'ms' : ' | DB -');
+        }
+        function render() {
+          if (!panel) {
+            if (!document.body) return;
+            panel = document.createElement('pre');
+            panel.style.cssText =
+              'position:fixed;left:0;right:0;bottom:0;z-index:2147483647;margin:0;padding:4px 6px;' +
+              'font:10px/1.3 ui-monospace,monospace;background:rgba(0,0,0,.78);color:#9f9;' +
+              'pointer-events:none;white-space:pre-wrap;max-height:40vh;overflow:hidden';
+            document.body.appendChild(panel);
+          }
+          panel.textContent = summary() + '\n' + lines.join('\n');
+        }
         function describe(el) {
           if (!el || !el.tagName) return String(el);
           var label = el.getAttribute && (el.getAttribute('aria-label') || '');
@@ -157,24 +176,20 @@
         function log(type, e) {
           var vv = window.visualViewport;
           var t = e && e.changedTouches && e.changedTouches[0];
+          // How long the event waited before the page got to handle it.
+          var lag = e && e.timeStamp ? performance.now() - e.timeStamp : 0;
+          if (lag > 0 && lag < 600000) worst.lag = Math.max(worst.lag, lag);
           var y = t ? Math.round(t.clientY) : e && e.clientY != null ? Math.round(e.clientY) : '';
           lines.unshift(
             (performance.now() / 1000).toFixed(2) + ' ' + type + ' y=' + y +
               ' sY=' + Math.round(window.scrollY) +
               (vv && vv.scale !== 1 ? ' zoom=' + vv.scale.toFixed(2) : '') +
               (vv ? ' vvTop=' + Math.round(vv.offsetTop) + ' vvH=' + Math.round(vv.height) : '') +
+              (lag > 50 && lag < 600000 ? ' lag=' + Math.round(lag) : '') +
               ' ' + describe(e && e.target),
           );
           lines.length = Math.min(lines.length, 14);
-          if (!panel) {
-            panel = document.createElement('pre');
-            panel.style.cssText =
-              'position:fixed;left:0;right:0;bottom:0;z-index:2147483647;margin:0;padding:4px 6px;' +
-              'font:10px/1.3 ui-monospace,monospace;background:rgba(0,0,0,.78);color:#9f9;' +
-              'pointer-events:none;white-space:pre-wrap;max-height:40vh;overflow:hidden';
-            document.body.appendChild(panel);
-          }
-          panel.textContent = lines.join('\n');
+          render();
         }
         window.__touchDiag = function (msg) { log(msg); };
         // A tap can register and its action still fail; show script errors next to the taps.
@@ -186,11 +201,13 @@
         var lastTick = performance.now();
         setInterval(function () {
           var now = performance.now();
+          worst.stall = Math.max(worst.stall, now - lastTick - 250);
           if (now - lastTick > 1000) log('STALL page frozen ' + Math.round(now - lastTick) + 'ms');
           lastTick = now;
+          render();
         }, 250);
         // The panel needs <body>; the version is on the Settings page.
-        document.addEventListener('DOMContentLoaded', function () { log('diagnostics on (v4: stalls, slow DB)'); });
+        document.addEventListener('DOMContentLoaded', function () { log('diagnostics on (v5: summary)'); });
         ['touchstart', 'touchend', 'touchcancel', 'click', 'focusin', 'focusout'].forEach(function (type) {
           document.addEventListener(type, function (e) { log(type === 'click' && !e.isTrusted ? 'click(fallback)' : type, e); }, { capture: true, passive: true });
         });
