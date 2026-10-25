@@ -32,6 +32,7 @@ import { selectRows, WriteError } from '@/data/write';
 import { formatWeekday, todayIso } from '@/lib/format';
 import { usePlanner, usePlannerId, PlannerGate } from '@/state/planner';
 import { Button, Chip, Field, textStyles } from '@/ui/components';
+import { DateField, TimeField } from '@/ui/pickers';
 import { usePalette } from '@/ui/theme';
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -170,7 +171,7 @@ function EventEditorContent() {
       <Field value={title} onChangeText={setTitle} maxLength={TEXT_LIMITS.title} placeholder={t('event.titlePlaceholder')} accessibilityLabel={t('event.title')} />
 
       <Text style={text.muted}>{t('event.date')}</Text>
-      <Field value={date} onChangeText={setDate} placeholder={t('event.datePlaceholder')} accessibilityLabel={t('event.date')} autoCapitalize="none" />
+      <DateField value={date} onChange={(v) => v && setDate(v)} label={t('event.date')} />
 
       <View style={styles.row}>
         <Text style={text.body}>{t('event.allDay')}</Text>
@@ -180,11 +181,11 @@ function EventEditorContent() {
         <View style={styles.row}>
           <View style={styles.flex}>
             <Text style={text.muted}>{t('event.start')}</Text>
-            <Field value={start} onChangeText={setStart} placeholder={t('event.timePlaceholder')} maxLength={5} accessibilityLabel={t('event.start')} />
+            <TimeField value={start} onChange={(v) => v && setStart(v)} label={t('event.start')} />
           </View>
           <View style={styles.flex}>
             <Text style={text.muted}>{t('event.end')}</Text>
-            <Field value={end} onChangeText={setEnd} placeholder={t('event.timePlaceholder')} maxLength={5} accessibilityLabel={t('event.end')} />
+            <TimeField value={end || null} onChange={(v) => setEnd(v ?? '')} label={t('event.end')} clearable />
           </View>
         </View>
       ) : null}
@@ -220,7 +221,7 @@ function EventEditorContent() {
             <Chip label={t('event.endsAfter')} selected={endsMode === 'count'} onPress={() => setEndsMode('count')} />
           </View>
           {endsMode === 'until' ? (
-            <Field value={until} onChangeText={setUntil} placeholder={t('event.datePlaceholder')} accessibilityLabel={t('event.endsOn')} />
+            <DateField value={until || null} onChange={(v) => v && setUntil(v)} label={t('event.endsOn')} min={date} />
           ) : null}
           {endsMode === 'count' ? (
             <View style={styles.row}>

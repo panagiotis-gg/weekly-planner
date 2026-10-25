@@ -143,7 +143,7 @@ function EventRow({ occurrence: o, canEdit }: { occurrence: Occurrence; canEdit:
       style={styles.eventRow}
     >
       <Text style={[styles.eventTime, { color: p.textMuted }]}>{time}</Text>
-      <Text style={{ color: p.text, flex: 1, fontSize: 15 }}>
+      <Text style={{ color: p.text, flex: 1, fontSize: 17 }}>
         {o.title}
         {o.isRecurring ? <Text style={{ color: p.textMuted }}>  ↻</Text> : null}
       </Text>
@@ -155,11 +155,11 @@ const styles = StyleSheet.create({
   column: { gap: 12 },
   compact: { width: 320 },
   header: { borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, alignItems: 'center', gap: 2 },
-  dayName: { fontSize: 15, fontWeight: '800', letterSpacing: 3 },
-  date: { fontSize: 13, fontWeight: '600' },
-  focus: { fontSize: 16, fontWeight: '600', textAlign: 'center' },
+  dayName: { fontSize: 17, fontWeight: '800', letterSpacing: 3 },
+  date: { fontSize: 15, fontWeight: '600' },
+  focus: { fontSize: 18, fontWeight: '600', textAlign: 'center' },
   eventRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, paddingVertical: 3 },
   habitRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 2 },
   flex: { flex: 1 },
-  eventTime: { width: 104, fontSize: 13, fontVariant: ['tabular-nums'] },
+  eventTime: { width: 150, fontSize: 15, fontVariant: ['tabular-nums'] },
 });

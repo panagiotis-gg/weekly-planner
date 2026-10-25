@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   item: { gap: 4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   titleCol: { flex: 1 },
-  status: { fontSize: 12, marginTop: -2 },
+  status: { fontSize: 13, marginTop: -2 },
   strip: { flexDirection: 'row', gap: 4, paddingLeft: 4, flexWrap: 'wrap' },
   stripCell: { alignItems: 'center', gap: 2, minWidth: 30 },
   stripDay: { fontSize: 10, fontWeight: '600' },

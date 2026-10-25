@@ -207,5 +207,5 @@ const styles = StyleSheet.create({
   detailCell: { height: 'auto', paddingHorizontal: 2, gap: 1 },
   bar: { height: 3, borderRadius: 2, width: '80%', overflow: 'hidden', marginBottom: 2 },
   detailText: { fontSize: 10, textAlign: 'center', fontVariant: ['tabular-nums'] },
-  summary: { fontSize: 12, textAlign: 'center' },
+  summary: { fontSize: 13, textAlign: 'center' },
 });

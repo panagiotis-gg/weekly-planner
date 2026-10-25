@@ -133,6 +133,21 @@ open in one tab at a time (Web Locks), as before. iOS and Android native builds 
 | J11 | "Achieved" display | ✓ badge and tinted row per item per week; days whose own daily target is met are highlighted. |
 | J12 | Limits | Times per day 1–20; times per week 1–100; days per week 1 … number of countable days; a spread day task spans **2–31 days** (accepted 2026-10-24). |
 | J13 | Changes over time | Habit targets are versioned with the day selection: a change applies from the **current week**; earlier weeks keep their target and result. To-dos and tasks are one-off, so edits apply to that item. |
-| J14 | Notifications | None tied to targets for now. |
+| J14 | Notifications | None tied to targets for now (reminders: see K). |
 | J15 | Where habits appear | Week screen grid **and** a new **"Today's habits"** section on each day page (above Tasks), with +/−; both show the same record. Habits are not copied into the Tasks or to-do lists. |
 | J16 | After a habit's weekly target is met | **Per-habit setting** in the habit editor: keep showing it in "Today's habits" (marked ✓, extra sessions can be recorded) or hide it until next week. Default: **keep showing** (accepted 2026-10-24). |
+
+## K. Reminders, date/time pickers and text size — decided 2026-10-25
+
+| # | Topic | Decision |
+|---|-------|----------|
+| K1 | What gets reminders | **Events, day tasks, habits and weekly to-dos.** Reminders are optional and personal (Q5 still applies). |
+| K2 | Reminder choices (**changes A6**) | Presets **at the time**, **1 hour before**, **1 day before**, plus **custom** (any amount before). Several per item. |
+| K3 | Delivery on iPhone (**changes D4**) | **Web Push** from a small service on the user's **free Cloudflare account**, which stores each reminder's time and the item's **title** to send it at the right moment. Needs iOS 16.4+, the app on the Home Screen, and notifications allowed once. Planner data otherwise stays on the device. |
+| K4 | Tasks and habits | Get an **optional time**. Reminders count from that time; without one, from **09:00** (as Q6). A habit reminds on each of its scheduled days. |
+| K5 | Weekly to-dos | Get an **optional due day** in their week (and optional time). Reminders count from it (09:00 without a time); no due day, no reminder. |
+| K6 | Tapping a notification | Opens that item's **day** (a to-do: its **week**). |
+| K7 | Date and time entry | Scrollable **iPhone pickers** instead of typed text everywhere: time = iPhone scroll wheels (12/24 h per the phone, F3); date = the iPhone's date picker. |
+| K8 | Text size | **iPhone standard sizes** (about 2 px larger): body 17, secondary 15, buttons and options 15–17, headings 13. The seven day cells in habit and to-do rows keep their size so they fit. |
+| K9 | Already done | A reminder is **skipped** when its task, to-do or that day's habit is already done. (Derived limitation: the push service learns this when the app next sends its reminder list, so a tick made while offline can't cancel a reminder.) |
+| K10 | How far ahead | The app sends the push service its reminders for the **next 30 days** and refreshes the list whenever it opens or something changes. If the app isn't opened for 30 days, repeating reminders stop until it is. |

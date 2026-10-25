@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1 },
   swatch: { width: 24, height: 24, borderRadius: 12, borderWidth: 2 },
   footer: { textAlign: 'center', marginTop: 8 },
-  version: { textAlign: 'center', fontSize: 12 },
+  version: { textAlign: 'center', fontSize: 13 },
 });
 
 /** Waits for the local database before rendering (see PlannerGate). */

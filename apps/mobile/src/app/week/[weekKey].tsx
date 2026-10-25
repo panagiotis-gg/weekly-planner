@@ -125,7 +125,7 @@ function Week({ weekKey }: { weekKey: string }) {
 const styles = StyleSheet.create({
   weekHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   weekTitle: { flex: 1, alignItems: 'center', gap: 2 },
-  weekTitleText: { fontSize: 18, fontWeight: '700' },
+  weekTitleText: { fontSize: 20, fontWeight: '700' },
   panel: { gap: 12 },
   narrowScroll: { padding: 16, gap: 12 },
   wideScroll: { padding: 20, gap: 16 },

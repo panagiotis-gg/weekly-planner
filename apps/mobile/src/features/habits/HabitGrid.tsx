@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   nameCell: { flex: 1, minWidth: 90, paddingRight: 6 },
   dayHead: { width: 34, textAlign: 'center', fontSize: 12, fontWeight: '600' },
   cell: { width: 34, alignItems: 'center', paddingVertical: 3 },
-  status: { fontSize: 12, marginTop: -2 },
+  status: { fontSize: 13, marginTop: -2 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   actionRow: { flexDirection: 'row', gap: 10 },

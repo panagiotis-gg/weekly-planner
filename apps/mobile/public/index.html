@@ -37,6 +37,11 @@
       body {
         overflow: hidden;
       }
+      /* iPhone centres the value of date/time inputs (src/ui/pickers.web.tsx); align it like other fields. */
+      input[type='date']::-webkit-date-and-time-value,
+      input[type='time']::-webkit-date-and-time-value {
+        text-align: left;
+      }
       /* These styles make the root element full-height */
       #root {
         display: flex;

@@ -16,7 +16,8 @@
     "moveDown": "Move down",
     "edit": "Edit",
     "noItems": "Nothing here yet",
-    "ok": "OK"
+    "ok": "OK",
+    "clear": "Clear"
   },
   "week": {
     "range": "{{start}} – {{end}}",

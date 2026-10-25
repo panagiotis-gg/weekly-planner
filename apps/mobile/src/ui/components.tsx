@@ -135,7 +135,7 @@ export function Stepper({
   return (
     <View style={styles.stepper} accessibilityLabel={label}>
       <IconButton glyph="−" label={`${label} −1`} onPress={() => onChange(Math.max(min, value - 1))} color={p.text} size={20} />
-      <Text style={{ color: p.text, fontSize: 16, minWidth: 28, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{value}</Text>
+      <Text style={{ color: p.text, fontSize: 17, minWidth: 28, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{value}</Text>
       <IconButton glyph="+" label={`${label} +1`} onPress={() => onChange(Math.min(max, value + 1))} color={p.text} size={20} />
     </View>
   );
@@ -210,7 +210,7 @@ export function Chip({ label, selected, onPress }: { label: string; selected: bo
       accessibilityState={{ selected }}
       style={[styles.chip, { borderColor: selected ? p.accent : p.border, backgroundColor: selected ? p.accent : 'transparent' }]}
     >
-      <Text style={{ color: selected ? p.onAccent : p.text, fontSize: 13 }}>{label}</Text>
+      <Text style={{ color: selected ? p.onAccent : p.text, fontSize: 15 }}>{label}</Text>
     </Pressable>
   );
 }
@@ -288,7 +288,7 @@ export function AddRow({ placeholder, onAdd, maxLength }: { placeholder: string;
   };
   return (
     <View style={styles.addRow}>
-      <Text style={{ color: p.textMuted, fontSize: 16, width: 22, textAlign: 'center' }}>+</Text>
+      <Text style={{ color: p.textMuted, fontSize: 18, width: 22, textAlign: 'center' }}>+</Text>
       <TextInput
         value={text}
         onChangeText={setText}
@@ -309,7 +309,7 @@ export function AddButton({ label, onPress }: { label: string; onPress: () => vo
   const p = usePalette();
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.addRow}>
-      <Text style={{ color: p.accent, fontSize: 16, width: 22, textAlign: 'center' }}>+</Text>
+      <Text style={{ color: p.accent, fontSize: 18, width: 22, textAlign: 'center' }}>+</Text>
       <Text style={[styles.editable, { color: p.textMuted, flex: 1 }]}>{label}</Text>
     </Pressable>
   );
@@ -351,8 +351,8 @@ export function Sheet({
 
 export const textStyles = (p: Palette) =>
   StyleSheet.create({
-    body: { color: p.text, fontSize: 15 },
-    muted: { color: p.textMuted, fontSize: 13 },
+    body: { color: p.text, fontSize: 17 },
+    muted: { color: p.textMuted, fontSize: 15 },
     done: { color: p.textMuted, textDecorationLine: 'line-through' },
   });
 
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
   card: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, padding: 14, gap: 8 },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   // Uppercased in code (upper()), not with textTransform, so Greek capitals drop their accents.
-  sectionTitle: { fontSize: 12, fontWeight: '700', letterSpacing: 1.2 },
+  sectionTitle: { fontSize: 13, fontWeight: '700', letterSpacing: 1.2 },
   checkbox: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   checkmark: { fontSize: 13, fontWeight: '800', lineHeight: 15 },
   counter: { minWidth: 40, height: 24, borderRadius: 12, borderWidth: 1, paddingHorizontal: 8, alignItems: 'center', justifyContent: 'center' },
@@ -369,14 +369,14 @@ const styles = StyleSheet.create({
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   progressTrack: { flex: 1, height: 8, borderRadius: 4, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 4 },
-  progressLabel: { fontSize: 12, fontVariant: ['tabular-nums'], minWidth: 36, textAlign: 'right' },
+  progressLabel: { fontSize: 13, fontVariant: ['tabular-nums'], minWidth: 36, textAlign: 'right' },
   iconButton: { paddingHorizontal: 6, paddingVertical: 2 },
   button: { borderRadius: 10, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 10, alignItems: 'center' },
-  buttonText: { fontSize: 15, fontWeight: '600' },
+  buttonText: { fontSize: 17, fontWeight: '600' },
   chip: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },
   // 16 px or larger: iPhone Safari zooms the page in on any text field with a smaller font.
-  field: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, fontSize: 16 },
-  editable: { fontSize: 16, paddingVertical: 4 },
+  field: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, fontSize: 17 },
+  editable: { fontSize: 17, paddingVertical: 4 },
   editableMultiline: { minHeight: 64, textAlignVertical: 'top' },
   addRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-start', alignItems: 'center', paddingHorizontal: 12 },
@@ -390,5 +390,5 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   sheetContent: { padding: 18, gap: 12 },
-  sheetTitle: { fontSize: 17, fontWeight: '700' },
+  sheetTitle: { fontSize: 20, fontWeight: '700' },
 });
