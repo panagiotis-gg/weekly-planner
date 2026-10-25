@@ -3,8 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-    <!-- viewport-fit=cover lets the app use the full iPhone screen; safe areas are handled in the app. -->
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
+    <!-- viewport-fit=cover lets the app use the full iPhone screen; safe areas are handled in the app.
+         maximum-scale=1 stops iPhone Safari zooming in on a focused text field and staying zoomed
+         (taps then stopped registering); pinch-to-zoom still works, Safari ignores it for that. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no, viewport-fit=cover" />
     <title>%WEB_TITLE%</title>
 
     <!-- Installable web app (PWA): manifest, home-screen icon and standalone mode on iPhone. -->
@@ -81,6 +83,10 @@
         function isTextField(el) {
           return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
         }
+        // Shown in the touch diagnostics log when it's on.
+        function note(msg) {
+          if (window.__touchDiag) window.__touchDiag(msg);
+        }
         document.addEventListener('touchstart', function (e) {
           var t = e.touches[0];
           start = e.touches.length === 1 ? { x: t.clientX, y: t.clientY, time: Date.now(), target: e.target, moved: false } : null;
@@ -94,15 +100,20 @@
         document.addEventListener('touchend', function (e) {
           var s = start;
           start = null;
-          if (!s || s.moved || e.defaultPrevented || Date.now() - s.time > 700) return;
+          if (!s) return note('fallback skip: no start');
+          if (s.moved) return note('fallback skip: moved');
+          if (e.defaultPrevented) return note('fallback skip: prevented');
+          if (Date.now() - s.time > 700) return note('fallback skip: long press');
           var target = s.target;
-          if (!target || !target.isConnected || isTextField(target) || target.closest('input,textarea,select,a[href]')) return;
+          if (!target || !target.isConnected) return note('fallback skip: target gone');
+          if (isTextField(target) || target.closest('input,textarea,select,a[href]')) return;
+          note('fallback armed');
           if (pending) clearTimeout(pending.timer);
           pending = {
             target: target,
             timer: setTimeout(function () {
               pending = null;
-              if (!target.isConnected) return;
+              if (!target.isConnected) return note('fallback skip: target gone');
               swallowUntil = Date.now() + 600;
               window.__syntheticClick = true;
               target.click();
@@ -116,6 +127,7 @@
             clearTimeout(pending.timer); // Safari delivered the click itself.
             pending = null;
           } else if (Date.now() < swallowUntil) {
+            note('fallback: late native click swallowed');
             e.stopPropagation(); // A late native click for a tap we already handled.
             e.preventDefault();
           }
@@ -148,6 +160,7 @@
           lines.unshift(
             (performance.now() / 1000).toFixed(2) + ' ' + type + ' y=' + y +
               ' sY=' + Math.round(window.scrollY) +
+              (vv && vv.scale !== 1 ? ' zoom=' + vv.scale.toFixed(2) : '') +
               (vv ? ' vvTop=' + Math.round(vv.offsetTop) + ' vvH=' + Math.round(vv.height) : '') +
               ' ' + describe(e && e.target),
           );
@@ -162,6 +175,9 @@
           }
           panel.textContent = lines.join('\n');
         }
+        window.__touchDiag = function (msg) { log(msg); };
+        // The panel needs <body>; the version is on the Settings page.
+        document.addEventListener('DOMContentLoaded', function () { log('diagnostics on (fallback v2)'); });
         ['touchstart', 'touchend', 'touchcancel', 'click', 'focusin', 'focusout'].forEach(function (type) {
           document.addEventListener(type, function (e) { log(type === 'click' && !e.isTrusted ? 'click(fallback)' : type, e); }, { capture: true, passive: true });
         });

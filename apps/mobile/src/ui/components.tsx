@@ -374,8 +374,9 @@ const styles = StyleSheet.create({
   button: { borderRadius: 10, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 10, alignItems: 'center' },
   buttonText: { fontSize: 15, fontWeight: '600' },
   chip: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },
-  field: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, fontSize: 15 },
-  editable: { fontSize: 15, paddingVertical: 4 },
+  // 16 px or larger: iPhone Safari zooms the page in on any text field with a smaller font.
+  field: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, fontSize: 16 },
+  editable: { fontSize: 16, paddingVertical: 4 },
   editableMultiline: { minHeight: 64, textAlignVertical: 'top' },
   addRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-start', alignItems: 'center', paddingHorizontal: 12 },
