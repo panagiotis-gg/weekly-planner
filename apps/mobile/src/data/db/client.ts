@@ -1,6 +1,7 @@
 import { openDatabaseAsync, SQLiteDatabase } from 'expo-sqlite';
 import { Platform } from 'react-native';
 import { MIGRATIONS } from './migrations';
+import { openWebDatabase, persistWrites } from './webDb';
 
 const DATABASE_NAME = 'planner.db';
 
@@ -54,13 +55,23 @@ function reportSlowCalls(database: SQLiteDatabase): void {
  * Opens the local replica and brings its schema up to date. Called once at start-up.
  * Opening is asynchronous because on web the SQLite worker and its wasm must finish loading
  * first; after that the synchronous API is safe on every platform.
+ * On web the database runs in memory and is saved to IndexedDB (webDb.ts).
  */
 export function initDb(): Promise<SQLiteDatabase> {
   opening ??= (async () => {
-    const database = await openDatabaseAsync(DATABASE_NAME);
-    await database.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
+    if (Platform.OS !== 'web') {
+      const database = await openDatabaseAsync(DATABASE_NAME);
+      await database.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
+      migrate(database);
+      db = database;
+      return database;
+    }
+    const { database, fresh } = await openWebDatabase(DATABASE_NAME);
+    await database.execAsync('PRAGMA foreign_keys = ON;');
+    const { saveNow } = persistWrites(database);
     migrate(database);
-    if (Platform.OS === 'web') reportSlowCalls(database);
+    if (fresh) await saveNow();
+    reportSlowCalls(database);
     db = database;
     return database;
   })();

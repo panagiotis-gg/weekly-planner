@@ -108,6 +108,14 @@ Drizzle. The sync layer writes rows generically (any entity, any subset of field
 simpler as SQL driven by an entity table than as typed per-table Drizzle queries, and it avoids bundling
 drizzle-kit migrations into the app. The server keeps Drizzle.
 
+**Web storage fix (2026-10-25):** in the iPhone home-screen web app, expo-sqlite's default web storage
+(OPFS) hung the database worker on the first write; every synchronous call then froze the page for 10 s
+or more, so buttons seemed dead (shown by the touch diagnostics: a 20 s INSERT, then "Sync operation
+timeout"). On web only, the database now runs in memory and a copy (schema and rows, as plain data)
+is saved to IndexedDB shortly after each write and when the app is hidden. Existing data is carried
+over from the old storage once, by reading it; the old storage is left untouched. The planner is
+open in one tab at a time (Web Locks), as before. iOS and Android native builds are unchanged.
+
 ## J. Targets ("how many days / times") — decided 2026-10-24
 
 | # | Topic | Decision |

@@ -2,6 +2,7 @@ import { createContext, ReactNode, useContext, useEffect, useState } from 'react
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useLiveQuery } from '@/data/changes';
 import { initDb } from '@/data/db/client';
+import { OtherTabError } from '@/data/db/webDb';
 import { ensureLocalPlanner, getPlanner, LocalPlanner } from '@/data/repositories/planners';
 import i18n from '@/i18n';
 import { IsoDate, isoWeekday } from '@planner/shared';
@@ -30,8 +31,9 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       })
       .catch((err: unknown) => {
         const raw = err instanceof Error ? err.message : String(err);
-        // On web the database file can be open in only one tab (OPFS exclusive access handle).
-        const message = /AccessHandle|createSyncAccessHandle/.test(raw) ? i18n.t('errors.otherTab') : raw;
+        // On web the planner can be open in only one tab (webDb.ts); older storage also locked per tab.
+        const message =
+          err instanceof OtherTabError || /AccessHandle|createSyncAccessHandle/.test(raw) ? i18n.t('errors.otherTab') : raw;
         if (!cancelled) setBoot({ status: 'error', message });
       });
     return () => {
