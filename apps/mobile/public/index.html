@@ -67,6 +67,63 @@
       })();
     </script>
 
+    <!-- iPhone Safari sometimes reports a complete tap (touchstart + touchend on a button) but never
+         dispatches the click, most often while the keyboard is open, and react-native-web only runs
+         onPress on click. For a short tap that didn't move, send the click ourselves if Safari hasn't
+         within a moment; a late native click for the same tap is then swallowed so it never fires twice. -->
+    <script>
+      (function () {
+        var MOVE_PX = 10;
+        var WAIT_MS = 350;
+        var start = null;
+        var pending = null;
+        var swallowUntil = 0;
+        function isTextField(el) {
+          return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+        }
+        document.addEventListener('touchstart', function (e) {
+          var t = e.touches[0];
+          start = e.touches.length === 1 ? { x: t.clientX, y: t.clientY, time: Date.now(), target: e.target, moved: false } : null;
+        }, { capture: true, passive: true });
+        document.addEventListener('touchmove', function (e) {
+          var t = e.touches[0];
+          if (start && (Math.abs(t.clientX - start.x) > MOVE_PX || Math.abs(t.clientY - start.y) > MOVE_PX)) start.moved = true;
+        }, { capture: true, passive: true });
+        document.addEventListener('touchcancel', function () { start = null; }, { capture: true, passive: true });
+        // Bubble phase on document: runs after the app's own handlers, so a tap they cancelled is left alone.
+        document.addEventListener('touchend', function (e) {
+          var s = start;
+          start = null;
+          if (!s || s.moved || e.defaultPrevented || Date.now() - s.time > 700) return;
+          var target = s.target;
+          if (!target || !target.isConnected || isTextField(target) || target.closest('input,textarea,select,a[href]')) return;
+          if (pending) clearTimeout(pending.timer);
+          pending = {
+            target: target,
+            timer: setTimeout(function () {
+              pending = null;
+              if (!target.isConnected) return;
+              swallowUntil = Date.now() + 600;
+              window.__syntheticClick = true;
+              target.click();
+              window.__syntheticClick = false;
+            }, WAIT_MS),
+          };
+        }, { passive: true });
+        document.addEventListener('click', function (e) {
+          if (!e.isTrusted) return;
+          if (pending) {
+            clearTimeout(pending.timer); // Safari delivered the click itself.
+            pending = null;
+          } else if (Date.now() < swallowUntil) {
+            e.stopPropagation(); // A late native click for a tap we already handled.
+            e.preventDefault();
+          }
+          swallowUntil = 0;
+        }, true);
+      })();
+    </script>
+
     <!-- Touch diagnostics (Settings → "Touch diagnostics"): an on-screen log of what Safari reports
          for each tap, to debug taps that don't register. Off by default; never blocks touches. -->
     <script>
@@ -106,7 +163,7 @@
           panel.textContent = lines.join('\n');
         }
         ['touchstart', 'touchend', 'touchcancel', 'click', 'focusin', 'focusout'].forEach(function (type) {
-          document.addEventListener(type, function (e) { log(type, e); }, { capture: true, passive: true });
+          document.addEventListener(type, function (e) { log(type === 'click' && !e.isTrusted ? 'click(fallback)' : type, e); }, { capture: true, passive: true });
         });
         if (window.visualViewport) {
           window.visualViewport.addEventListener('resize', function () { log('vv-resize'); });
