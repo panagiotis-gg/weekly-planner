@@ -48,8 +48,9 @@ The app follows the phone's language (Greek or English) and light/dark mode.
   icon deletes the data.**
 - **Updates:** after a deploy, the app picks up the new version the next time you open it
   (the update downloads in the background; a second launch shows it).
-- **Not available as a web app:** reminder notifications and reading the iPhone's calendar.
-  Those need the native app (Apple Developer Program).
+- **Reminder notifications** come through a small push service on Cloudflare; set it up once
+  with [deploy-push.md](deploy-push.md), then turn them on in the app's Settings.
+- **Not available as a web app:** reading the iPhone's calendar (needs the native app).
 
 ## How it works (for developers)
 

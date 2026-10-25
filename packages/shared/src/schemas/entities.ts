@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { weekdaysFromMask } from '../dates';
+import { addDays, weekdaysFromMask } from '../dates';
 import { TEXT_LIMITS } from '../limits';
 import { RECURRENCE_FREQS } from '../recurrence';
 import { TARGET_LIMITS, TARGET_TYPES, targetIssues } from '../targets';
@@ -72,6 +72,8 @@ export const taskFields = z.strictObject({
   perDay: limited(TARGET_LIMITS.perDay),
   /** Spread over this many consecutive days from `date`; null = that day only (J4). */
   spanDays: limited(TARGET_LIMITS.spanDays),
+  /** Optional time of day; reminders count from it, or from 09:00 without one (K4). */
+  time: wallTimeSchema.nullable(),
   deleted,
 });
 
@@ -82,6 +84,9 @@ export const weeklyTodoFields = z.strictObject({
   done: z.boolean(),
   position: positionSchema,
   ...targetFieldShape,
+  /** Optional due day within the to-do's week, and optional time on it; reminders need a due day (K5). */
+  dueDate: isoDateSchema.nullable(),
+  dueTime: wallTimeSchema.nullable(),
   deleted,
 });
 
@@ -93,6 +98,8 @@ export const habitFields = z.strictObject({
   endsOn: weekKeySchema.nullable(),
   /** Hide from "Today's habits" once the week's target is met (J16; default false = keep showing). */
   hideWhenAchieved: z.boolean(),
+  /** Optional time of day on each scheduled day; reminders count from it, or from 09:00 (K4). */
+  time: wallTimeSchema.nullable(),
   deleted,
 });
 
@@ -140,10 +147,15 @@ export const eventExceptionFields = z.strictObject({
   deleted,
 });
 
-export const eventReminderFields = z.strictObject({
-  eventId: uuidSchema,
+// ---- reminders (K1–K10) ----
+/** Items that can have reminders (K1). */
+export const REMINDER_ITEM_TYPES = ['event', 'task', 'habit', 'weekly_todo'] as const;
+export const reminderFields = z.strictObject({
+  itemType: z.enum(REMINDER_ITEM_TYPES),
+  itemId: uuidSchema,
+  /** Reminders are personal (Q5). */
   userId: uuidSchema,
-  /** Minutes before the start (or before 09:00 for all-day events). */
+  /** Minutes before the item's time, or before 09:00 when it has none (Q6, K4, K5). */
   offsetMinutes: z.number().int().min(0),
   deleted,
 });
@@ -190,9 +202,14 @@ export function habitScheduleIssues(s: HabitScheduleFields): string[] {
   return targetIssues(s, weekdaysFromMask(s.weekdays).length);
 }
 
-/** All 7 days of a weekly to-do's week count (J3). */
+/** All 7 days of a weekly to-do's week count (J3); a due day lies in that week and comes before a due time (K5). */
 export function weeklyTodoIssues(t: WeeklyTodoFields): string[] {
-  return targetIssues(t, 7);
+  const issues = targetIssues(t, 7);
+  if (t.dueTime !== null && t.dueDate === null) issues.push('DUE_TIME_WITHOUT_DATE');
+  if (t.dueDate !== null && (t.dueDate < t.weekKey || t.dueDate > addDays(t.weekKey, 6))) {
+    issues.push('DUE_DATE_OUTSIDE_WEEK');
+  }
+  return issues;
 }
 
 export function eventExceptionIssues(x: EventExceptionFields): string[] {
@@ -221,7 +238,7 @@ export const habitScheduleRow = withIssues(habitScheduleFields.extend(rowKeys), 
 export const completionRow = completionFields.extend(rowKeys);
 export const eventRow = withIssues(eventFields.extend(rowKeys), eventIssues);
 export const eventExceptionRow = withIssues(eventExceptionFields.extend(rowKeys), eventExceptionIssues);
-export const eventReminderRow = eventReminderFields.extend(rowKeys);
+export const reminderRow = reminderFields.extend(rowKeys);
 export const plannerSettingsRow = plannerFields.extend({ id: uuidSchema });
 
 export type DayEntry = z.infer<typeof dayEntryRow>;
@@ -233,5 +250,6 @@ export type HabitSchedule = z.infer<typeof habitScheduleRow>;
 export type Completion = z.infer<typeof completionRow>;
 export type PlannerEvent = z.infer<typeof eventRow>;
 export type EventException = z.infer<typeof eventExceptionRow>;
-export type EventReminder = z.infer<typeof eventReminderRow>;
+export type Reminder = z.infer<typeof reminderRow>;
+export type ReminderItemType = (typeof REMINDER_ITEM_TYPES)[number];
 export type PlannerSettings = z.infer<typeof plannerSettingsRow>;

@@ -9,7 +9,7 @@ import { useCanEdit, useDayColorFor } from '@/state/planner';
 import { AddButton, AddRow, Button, Checkbox, Counter, EditableText, IconButton, ProgressBar, Sheet, textStyles } from '@/ui/components';
 import { confirm } from '@/ui/confirm';
 import { usePalette } from '@/ui/theme';
-import { DayCellView, ItemView } from './itemViews';
+import { DayCellView, itemWhen, ItemView } from './itemViews';
 
 type Item = Task | WeeklyTodo;
 
@@ -105,7 +105,9 @@ export function Checklist({
                   onSave={(title) => (title.trim() ? renameItem(kind, item, title) : undefined)}
                   style={view.struck ? text.done : undefined}
                 />
-                {view.status ? <Text style={[text.muted, styles.status]}>{view.status}</Text> : null}
+                {itemWhen(item) || view.status ? (
+                  <Text style={[text.muted, styles.status]}>{[itemWhen(item), view.status].filter(Boolean).join(' · ')}</Text>
+                ) : null}
               </View>
               {canEdit ? <IconButton glyph="⋯" label={t('common.edit')} onPress={() => setActionsFor(index)} /> : null}
             </View>
@@ -157,7 +159,7 @@ export function Checklist({
                 />
               </View>
               {renderTargetEditor ? (
-                <Button title={t('target.edit')} variant="secondary" onPress={() => setEditingTarget(true)} />
+                <Button title={t('item.details')} variant="secondary" onPress={() => setEditingTarget(true)} />
               ) : null}
               {selectedView?.onUndo ? (
                 <Button

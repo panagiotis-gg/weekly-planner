@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useLiveQuery } from '@/data/changes';
 import { initDb } from '@/data/db/client';
 import { OtherTabError } from '@/data/db/webDb';
+import { startReminderSync } from '@/features/reminders/push';
 import { ensureLocalPlanner, getPlanner, LocalPlanner } from '@/data/repositories/planners';
 import i18n from '@/i18n';
 import { IsoDate, isoWeekday } from '@planner/shared';
@@ -23,11 +24,15 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
+    let stopSync = () => {};
     initDb()
       .then(() => {
         loadThemePreference();
         const plannerId = ensureLocalPlanner();
-        if (!cancelled) setBoot({ status: 'ready', plannerId });
+        if (cancelled) return;
+        setBoot({ status: 'ready', plannerId });
+        // Keep the reminder push service's list current (DECISIONS K10).
+        stopSync = startReminderSync(plannerId);
       })
       .catch((err: unknown) => {
         const raw = err instanceof Error ? err.message : String(err);
@@ -38,6 +43,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       });
     return () => {
       cancelled = true;
+      stopSync();
     };
   }, []);
 

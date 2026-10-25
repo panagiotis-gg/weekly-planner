@@ -1,14 +1,17 @@
 import '@/i18n';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { listenForNotificationTaps } from '@/features/reminders/notificationTaps';
 import { PlannerProvider } from '@/state/planner';
 import { usePalette } from '@/ui/theme';
 
 function AppStack() {
   const p = usePalette();
   const { t } = useTranslation();
+  useEffect(() => listenForNotificationTaps(), []);
   return (
     <>
       <StatusBar style={p.scheme === 'dark' ? 'light' : 'dark'} />

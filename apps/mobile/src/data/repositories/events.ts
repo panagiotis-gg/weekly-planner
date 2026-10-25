@@ -34,8 +34,11 @@ export function getOccurrences(plannerId: string, from: IsoDate, to: IsoDate): O
   return expandEvents(events, exceptions, from, to);
 }
 
-export function createEvent(plannerId: string, draft: EventDraft): void {
-  writeFields('event', newId(), plannerId, { ...draft, title: draft.title.trim(), deleted: false });
+/** Returns the new event's id (to attach reminders). */
+export function createEvent(plannerId: string, draft: EventDraft): string {
+  const id = newId();
+  writeFields('event', id, plannerId, { ...draft, title: draft.title.trim(), deleted: false });
+  return id;
 }
 
 /** "All occurrences" (or a one-off event): edit the series row. */

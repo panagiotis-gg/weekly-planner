@@ -17,15 +17,24 @@ export const ENTITIES: Record<EntityType, EntityMeta> = {
   week_note: { table: 'week_notes', columns: { weekKey: 'text', body: 'text', deleted: 'bool' } },
   task: {
     table: 'tasks',
-    columns: { date: 'text', title: 'text', done: 'bool', position: 'text', perDay: 'int', spanDays: 'int', deleted: 'bool' },
+    columns: { date: 'text', title: 'text', done: 'bool', position: 'text', perDay: 'int', spanDays: 'int', time: 'text', deleted: 'bool' },
   },
   weekly_todo: {
     table: 'weekly_todos',
-    columns: { weekKey: 'text', title: 'text', done: 'bool', position: 'text', ...targetColumns, deleted: 'bool' },
+    columns: {
+      weekKey: 'text',
+      title: 'text',
+      done: 'bool',
+      position: 'text',
+      ...targetColumns,
+      dueDate: 'text',
+      dueTime: 'text',
+      deleted: 'bool',
+    },
   },
   habit: {
     table: 'habits',
-    columns: { name: 'text', position: 'text', startsOn: 'text', endsOn: 'text', hideWhenAchieved: 'bool', deleted: 'bool' },
+    columns: { name: 'text', position: 'text', startsOn: 'text', endsOn: 'text', hideWhenAchieved: 'bool', time: 'text', deleted: 'bool' },
   },
   habit_schedule: {
     table: 'habit_schedules',
@@ -64,9 +73,9 @@ export const ENTITIES: Record<EntityType, EntityMeta> = {
       deleted: 'bool',
     },
   },
-  event_reminder: {
-    table: 'event_reminders',
-    columns: { eventId: 'text', userId: 'text', offsetMinutes: 'int', deleted: 'bool' },
+  reminder: {
+    table: 'reminders',
+    columns: { itemType: 'text', itemId: 'text', userId: 'text', offsetMinutes: 'int', deleted: 'bool' },
   },
 };
 

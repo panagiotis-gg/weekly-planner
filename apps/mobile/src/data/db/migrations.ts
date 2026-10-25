@@ -136,4 +136,18 @@ export const MIGRATIONS: MigrationStep[] = [
   CREATE TABLE kv (key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL);
   `,
   targetsAndCompletions,
+  // Reminders on every kind of item (DECISIONS K1–K5): optional times, to-do due days, and one
+  // reminders table replacing event_reminders (never used by the app, so nothing to carry over).
+  `
+  ALTER TABLE tasks ADD COLUMN time TEXT;
+  ALTER TABLE habits ADD COLUMN time TEXT;
+  ALTER TABLE weekly_todos ADD COLUMN due_date TEXT;
+  ALTER TABLE weekly_todos ADD COLUMN due_time TEXT;
+  DROP TABLE event_reminders;
+  CREATE TABLE reminders (
+    id TEXT PRIMARY KEY NOT NULL, item_type TEXT NOT NULL, item_id TEXT NOT NULL, user_id TEXT NOT NULL,
+    offset_minutes INTEGER NOT NULL, ${syncCols}
+  );
+  CREATE INDEX reminders_by_item ON reminders (planner_id, item_id);
+  `,
 ];

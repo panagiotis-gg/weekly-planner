@@ -1,0 +1,19 @@
+# Reminder push service (DECISIONS K3). Deployed from GitHub by Cloudflare Workers Builds;
+# setup steps in docs/deploy-push.md.
+name = "weekly-planner-push"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+# Every minute: push the reminders that are due.
+[triggers]
+crons = ["* * * * *"]
+
+# The database is created once in the Cloudflare dashboard (tables are created by the Worker itself).
+[[d1_databases]]
+binding = "DB"
+database_name = "weekly-planner-push"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[vars]
+# The planner web app's address (Cloudflare Pages). Only it may call this service.
+APP_ORIGIN = "https://weekly-planner.pages.dev"

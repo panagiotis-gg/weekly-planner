@@ -1,11 +1,13 @@
 import { weekRange } from '@planner/shared';
 import Constants from 'expo-constants';
 import type { TFunction } from 'i18next';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { setDayColor, setWeekStartDay } from '@/data/repositories/planners';
+import { disablePush, enablePush, prepareVapidKey, pushStatus, PushStatus, sendTestPush } from '@/features/reminders/push';
 import { formatWeekday } from '@/lib/format';
-import { useCanEdit, usePlanner, PlannerGate } from '@/state/planner';
+import { useCanEdit, usePlanner, usePlannerId, PlannerGate } from '@/state/planner';
 import { Button, Card, Chip, SectionTitle, textStyles } from '@/ui/components';
 import { DAY_COLOR_PRESETS, DEFAULT_DAY_COLORS, ThemePreference, usePalette, useThemeStore } from '@/ui/theme';
 
@@ -82,6 +84,8 @@ function SettingsContent() {
         ) : null}
       </Card>
 
+      {Platform.OS === 'web' ? <NotificationsCard /> : null}
+
       {Platform.OS === 'web' ? <TouchDiagnosticsCard /> : null}
 
       <Text style={[text.muted, styles.footer]}>{t('settings.localOnly')}</Text>
@@ -99,6 +103,68 @@ function versionLabel(t: TFunction): string {
     commit: build.commit ?? 'unknown',
     date: time ? `${time.toLocaleDateString()} ${time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '',
   });
+}
+
+const STATUS_TEXT: Record<PushStatus, string> = {
+  unsupported: 'notifications.unsupported',
+  'needs-install': 'notifications.needsInstall',
+  'not-configured': 'notifications.notConfigured',
+  denied: 'notifications.denied',
+  off: 'notifications.off',
+  on: 'notifications.on',
+};
+
+/** Reminder notifications on this device (DECISIONS K3): turn on (asks permission), test, turn off. */
+function NotificationsCard() {
+  const { t } = useTranslation();
+  const p = usePalette();
+  const text = textStyles(p);
+  const plannerId = usePlannerId();
+  const [status, setStatus] = useState<PushStatus>(pushStatus);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Ready before the tap, so "Turn on" can subscribe straight after the permission prompt.
+    if (status === 'off') prepareVapidKey().catch(() => undefined);
+  }, [status]);
+
+  const act = (action: () => Promise<PushStatus | string>) => {
+    setBusy(true);
+    setMessage(null);
+    action()
+      .then((result) => (result in STATUS_TEXT ? setStatus(result as PushStatus) : setMessage(result)))
+      .catch(() => setMessage(t('notifications.failed')))
+      .finally(() => setBusy(false));
+  };
+
+  return (
+    <Card>
+      <SectionTitle>{t('notifications.title')}</SectionTitle>
+      <Text style={text.body}>{t(STATUS_TEXT[status])}</Text>
+      {status === 'off' ? (
+        <Button title={t('notifications.turnOn')} disabled={busy} onPress={() => act(() => enablePush(plannerId))} />
+      ) : null}
+      {status === 'on' ? (
+        <>
+          <Button
+            title={t('notifications.test')}
+            variant="secondary"
+            disabled={busy}
+            onPress={() =>
+              act(async () =>
+                (await sendTestPush(t('notifications.testTitle'), t('notifications.testBody')))
+                  ? t('notifications.testSent')
+                  : t('notifications.failed'),
+              )
+            }
+          />
+          <Button title={t('notifications.turnOff')} variant="secondary" disabled={busy} onPress={() => act(disablePush)} />
+        </>
+      ) : null}
+      {message ? <Text style={text.muted}>{message}</Text> : null}
+    </Card>
+  );
 }
 
 const DIAGNOSTICS_KEY = 'touchDiagnostics';

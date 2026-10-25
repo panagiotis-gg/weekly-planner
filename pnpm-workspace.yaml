@@ -6,6 +6,7 @@ packages:
 onlyBuiltDependencies:
   - esbuild
   - '@nestjs/core'
+  - workerd
 
 # Reviewed and not needed: prebuilt binaries ship via optional deps; scarf is install telemetry.
 ignoredBuiltDependencies:

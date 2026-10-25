@@ -35,7 +35,8 @@ export function addHabit(
   weekdays = ALL_DAYS_MASK,
   target: Target = NO_TARGET,
   hideWhenAchieved = false, // J16 default: keep showing
-): void {
+  time: string | null = null,
+): string {
   const habits = getHabits(plannerId);
   const id = newId();
   writeFields('habit', id, plannerId, {
@@ -44,9 +45,16 @@ export function addHabit(
     startsOn: weekKey,
     endsOn: null,
     hideWhenAchieved,
+    time,
     deleted: false,
   });
   setHabitPlan(plannerId, id, weekKey, weekdays, target);
+  return id;
+}
+
+/** Optional time on each scheduled day (K4). */
+export function setHabitTime(habit: Habit, time: string | null): void {
+  if (habit.time !== time) writeFields('habit', habit.id, habit.plannerId, { time });
 }
 
 export function renameHabit(habit: Habit, name: string): void {

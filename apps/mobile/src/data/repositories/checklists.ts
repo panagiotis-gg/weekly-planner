@@ -35,35 +35,57 @@ export const todoUsesCompletions = (todo: WeeklyTodo) => todo.targetType !== nul
 
 const lastPosition = (items: { position: string }[]) => items.at(-1)?.position ?? null;
 
+/** Returns the new task's id (to attach reminders). */
 export function addTask(
   plannerId: string,
   date: IsoDate,
   title: string,
   perDay: number | null = null,
   spanDays: number | null = null,
-): void {
+  time: string | null = null,
+): string {
+  const id = newId();
   const position = keyBetween(lastPosition(getTasks(plannerId, date)), null);
-  writeFields('task', newId(), plannerId, {
+  writeFields('task', id, plannerId, {
     date,
     title: title.trim(),
     done: false,
     position,
     perDay,
     spanDays,
+    time,
     deleted: false,
   });
+  return id;
 }
 
-export function addWeeklyTodo(plannerId: string, weekKey: IsoDate, title: string, target: Target = NO_TARGET): void {
+/** A weekly to-do's optional due day in its week and optional time on it (K5). */
+export interface TodoDue {
+  dueDate: IsoDate | null;
+  dueTime: string | null;
+}
+export const NO_DUE: TodoDue = { dueDate: null, dueTime: null };
+
+/** Returns the new to-do's id (to attach reminders). */
+export function addWeeklyTodo(
+  plannerId: string,
+  weekKey: IsoDate,
+  title: string,
+  target: Target = NO_TARGET,
+  due: TodoDue = NO_DUE,
+): string {
+  const id = newId();
   const position = keyBetween(lastPosition(getWeeklyTodos(plannerId, weekKey)), null);
-  writeFields('weekly_todo', newId(), plannerId, {
+  writeFields('weekly_todo', id, plannerId, {
     weekKey,
     title: title.trim(),
     done: false,
     position,
     ...target,
+    ...due,
     deleted: false,
   });
+  return id;
 }
 
 type Kind = 'task' | 'weekly_todo';
@@ -117,4 +139,15 @@ export function setTaskTarget(task: Task, perDay: number | null, spanDays: numbe
 
 export function setTodoTarget(todo: WeeklyTodo, target: Target): void {
   writeFields('weekly_todo', todo.id, todo.plannerId, { ...target });
+}
+
+/** Optional time of day (K4). */
+export function setTaskTime(task: Task, time: string | null): void {
+  if (task.time !== time) writeFields('task', task.id, task.plannerId, { time });
+}
+
+export function setTodoDue(todo: WeeklyTodo, due: TodoDue): void {
+  if (todo.dueDate !== due.dueDate || todo.dueTime !== due.dueTime) {
+    writeFields('weekly_todo', todo.id, todo.plannerId, { ...due });
+  }
 }

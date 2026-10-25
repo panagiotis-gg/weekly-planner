@@ -5,6 +5,7 @@ export * from './targets';
 export * from './progress';
 export * from './ordering';
 export * from './limits';
+export * from './reminders';
 export * from './sync/hlc';
 export * from './sync/merge';
 export * from './sync/ids';

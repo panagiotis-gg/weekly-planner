@@ -18,6 +18,7 @@ import {
   setCheckedForDay,
 } from '@/data/repositories/completions';
 import i18n from '@/i18n';
+import { formatMonthDay, formatTime, formatWeekday } from '@/lib/format';
 
 type Counts = ReadonlyMap<string, ReadonlyMap<IsoDate, number>>;
 const countOf = (counts: Counts, itemId: string, date: IsoDate) => counts.get(itemId)?.get(date) ?? 0;
@@ -135,4 +136,14 @@ export function todoView(todo: WeeklyTodo, range: WeekRange, counts: Counts): It
     strip,
     onUndo: anyTaps ? () => removeLatestItemCompletion(todo.plannerId, todo.id) : undefined,
   };
+}
+
+/** When an item is planned, for its row: a task's time, a to-do's due day and time (K4, K5). */
+export function itemWhen(item: Task | WeeklyTodo): string | undefined {
+  if ('weekKey' in item) {
+    if (!item.dueDate) return undefined;
+    const day = `${formatWeekday(item.dueDate, 'short')} ${formatMonthDay(item.dueDate)}`;
+    return item.dueTime ? `${day} · ${formatTime(item.dueTime)}` : day;
+  }
+  return item.time ? formatTime(item.time) : undefined;
 }

@@ -28,7 +28,7 @@ describe('field schemas', () => {
   });
 
   it('enforces title and note limits (Q1)', () => {
-    const task = { date: '2025-06-09', title: 'x'.repeat(200), done: false, position: 'a0', perDay: null, spanDays: null, deleted: false };
+    const task = { date: '2025-06-09', title: 'x'.repeat(200), done: false, position: 'a0', perDay: null, spanDays: null, time: null, deleted: false };
     expect(taskFields.safeParse(task).success).toBe(true);
     expect(taskFields.safeParse({ ...task, title: 'x'.repeat(201) }).success).toBe(false);
     expect(taskFields.safeParse({ ...task, title: '   ' }).success).toBe(false);
@@ -80,7 +80,7 @@ describe('target fields (J1–J13)', () => {
   });
 
   it('limits a spread day task to 2–31 days and 1–20 times a day', () => {
-    const task = { date: '2025-06-09', title: 'antibiotic', done: false, position: 'a0', perDay: 3, spanDays: 5, deleted: false };
+    const task = { date: '2025-06-09', title: 'antibiotic', done: false, position: 'a0', perDay: 3, spanDays: 5, time: null, deleted: false };
     expect(taskFields.safeParse(task).success).toBe(true);
     expect(taskFields.safeParse({ ...task, spanDays: 1 }).success).toBe(false);
     expect(taskFields.safeParse({ ...task, spanDays: 32 }).success).toBe(false);
@@ -99,6 +99,8 @@ describe('target fields (J1–J13)', () => {
       perDay: null,
       daysPerWeek: null,
       timesPerWeek: 3,
+      dueDate: null,
+      dueTime: null,
       deleted: false,
     };
     expect(weeklyTodoRow.safeParse(todo).success).toBe(true);

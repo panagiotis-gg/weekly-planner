@@ -108,6 +108,7 @@ export const tasks = pgTable(
     position: positionText().notNull(),
     perDay: smallint(), // N times a day; null = once
     spanDays: smallint(), // spread over consecutive days (J4); null = that day only
+    time: time(), // optional; reminders count from it, or from 09:00 (K4)
     ...syncColumns(),
   },
   (t) => [
@@ -126,10 +127,17 @@ export const weeklyTodos = pgTable(
     done: boolean().notNull().default(false), // only used without a target (J5)
     position: positionText().notNull(),
     ...targetColumns(),
+    dueDate: date({ mode: 'string' }), // optional due day in its week (K5)
+    dueTime: time(), // optional, only with a due day
     ...syncColumns(),
   },
   (t) => [
     check('weekly_todos_week_key_monday', isMonday(t.weekKey)),
+    check(
+      'weekly_todos_due_date_in_week',
+      sql`${t.dueDate} IS NULL OR ${t.dueDate} BETWEEN ${t.weekKey} AND ${t.weekKey} + 6`,
+    ),
+    check('weekly_todos_due_time_needs_date', sql`${t.dueTime} IS NULL OR ${t.dueDate} IS NOT NULL`),
     ...targetChecks('weekly_todos', t),
     feedIndex('weekly_todos', t),
   ],
@@ -146,6 +154,7 @@ export const habits = pgTable(
     startsOn: date({ mode: 'string' }).notNull(),
     endsOn: date({ mode: 'string' }),
     hideWhenAchieved: boolean().notNull().default(false), // J16: default keep showing
+    time: time(), // optional time on each scheduled day; reminders count from it (K4)
     ...syncColumns(),
   },
   (t) => [
@@ -271,22 +280,24 @@ export const eventExceptions = pgTable(
   ],
 );
 
-export const eventReminders = pgTable(
-  'event_reminders',
+// ---- reminders (K1–K10): on events, tasks, habits and weekly to-dos ----
+
+export const reminders = pgTable(
+  'reminders',
   {
     id: uuid().primaryKey(),
-    eventId: uuid()
-      .notNull()
-      .references(() => events.id, { onDelete: 'cascade' }),
+    itemType: text().notNull(),
+    itemId: uuid().notNull(), // like completions: no FK, the item type decides the table
     userId: uuid()
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }), // reminders are personal (Q5)
-    offsetMinutes: integer().notNull(), // before start; all-day: before 09:00 (Q6)
+    offsetMinutes: integer().notNull(), // before the item's time, or before 09:00 without one (Q6, K4)
     ...syncColumns(),
   },
   (t) => [
-    check('event_reminders_offset', sql`${t.offsetMinutes} >= 0`),
-    index('event_reminders_event').on(t.eventId),
-    feedIndex('event_reminders', t),
+    check('reminders_item_type', sql`${t.itemType} IN ('event','task','habit','weekly_todo')`),
+    check('reminders_offset', sql`${t.offsetMinutes} >= 0`),
+    index('reminders_item').on(t.itemId),
+    feedIndex('reminders', t),
   ],
 );

@@ -4,7 +4,7 @@ import {
   dayEntryFields,
   eventExceptionFields,
   eventFields,
-  eventReminderFields,
+  reminderFields,
   completionFields,
   habitFields,
   habitScheduleFields,
@@ -28,7 +28,7 @@ export const ENTITY_TYPES = [
   'completion',
   'event',
   'event_exception',
-  'event_reminder',
+  'reminder',
 ] as const;
 export type EntityType = (typeof ENTITY_TYPES)[number];
 export const entityTypeSchema = z.enum(ENTITY_TYPES);
@@ -45,7 +45,7 @@ export const ENTITY_FIELD_SCHEMAS = {
   completion: completionFields,
   event: eventFields,
   event_exception: eventExceptionFields,
-  event_reminder: eventReminderFields,
+  reminder: reminderFields,
 } as const satisfies Record<EntityType, z.ZodObject>;
 
 export const mutationSchema = z

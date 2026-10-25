@@ -28,7 +28,9 @@ import {
   getEvent,
   updateEvent,
 } from '@/data/repositories/events';
+import { getItemOffsets, setItemReminders } from '@/data/repositories/reminders';
 import { selectRows, WriteError } from '@/data/write';
+import { ReminderPicker } from '@/features/reminders/ReminderPicker';
 import { formatWeekday, todayIso } from '@/lib/format';
 import { usePlanner, usePlannerId, PlannerGate } from '@/state/planner';
 import { Button, Chip, Field, textStyles } from '@/ui/components';
@@ -90,6 +92,7 @@ function EventEditorContent() {
   );
   const [until, setUntil] = useState(event?.recurrenceUntil ?? '');
   const [count, setCount] = useState(event?.recurrenceCount ? String(event.recurrenceCount) : '');
+  const [offsets, setOffsets] = useState<number[]>(() => (event ? getItemOffsets(plannerId, event.id) : []));
   const [errors, setErrors] = useState<string[]>([]);
   const [pending, setPending] = useState<Pending>(null);
 
@@ -135,19 +138,25 @@ function EventEditorContent() {
     setErrors(e);
     if (e.length) return;
     run(() => {
-      if (!event) return createEvent(plannerId, draft(date));
+      // Reminders belong to the event (every occurrence), whichever scope is saved.
+      if (!event) {
+        setItemReminders(plannerId, 'event', createEvent(plannerId, draft(date)), offsets);
+        return;
+      }
       if (scope === 'this' && originalDate) {
-        return editOccurrence(event, originalDate, {
+        editOccurrence(event, originalDate, {
           title,
           date,
           allDay,
           startTime: allDay ? null : start,
           endTime: allDay || end === '' ? null : end,
         });
+      } else {
+        // Whole series: moving this occurrence's date shifts the series start by the same amount.
+        const shift = originalDate ? diffDays(date, originalDate) : 0;
+        updateEvent(event, draft(isRecurring ? addDays(event.startDate, shift) : date));
       }
-      // Whole series: moving this occurrence's date shifts the series start by the same amount.
-      const shift = originalDate ? diffDays(date, originalDate) : 0;
-      return updateEvent(event, draft(isRecurring ? addDays(event.startDate, shift) : date));
+      setItemReminders(plannerId, 'event', event.id, offsets);
     });
   }
 
@@ -189,6 +198,12 @@ function EventEditorContent() {
           </View>
         </View>
       ) : null}
+
+      <ReminderPicker
+        value={offsets}
+        onChange={setOffsets}
+        hint={[allDay ? t('reminder.noTimeHint') : '', freq ? t('reminder.seriesHint') : ''].filter(Boolean).join(' ') || undefined}
+      />
 
       {/* Repeat settings belong to the series: saving with "This event" keeps the series' rule. */}
       <Text style={text.muted}>{t('event.repeat')}</Text>

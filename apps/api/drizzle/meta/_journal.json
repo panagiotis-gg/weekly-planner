@@ -29,6 +29,20 @@
       "when": 1792859837217,
       "tag": "0003_drop_habit_checks",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792923140105,
+      "tag": "0004_item_times_drop_event_reminders",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792923141944,
+      "tag": "0005_reminders",
+      "breakpoints": true
     }
   ]
 }

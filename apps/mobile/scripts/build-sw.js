@@ -14,7 +14,9 @@ generateSW({
     // glob skips dot-folders unless a pattern names them explicitly.
     '**/.pnpm/**/*.{wasm,png,ttf,woff,woff2}',
   ],
-  globIgnores: ['sw.js', 'workbox-*.js', '_headers', '_redirects'],
+  globIgnores: ['sw.js', 'workbox-*.js', '_headers', '_redirects', 'push-sw.js'],
+  // Reminder notifications: push and notification-tap handlers (public/push-sw.js).
+  importScripts: ['push-sw.js'],
   swDest: path.join(dist, 'sw.js'),
   navigateFallback: '/index.html',
   navigateFallbackDenylist: [/^\/_expo\//, /\.[a-z0-9]+$/i],

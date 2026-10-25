@@ -28,13 +28,17 @@ import {
   deleteHabit,
   renameHabit,
   setHabitPlan,
+  setHabitTime,
   setHideWhenAchieved,
   stopTrackingHabit,
 } from '@/data/repositories/habits';
+import { getItemOffsets, setItemReminders } from '@/data/repositories/reminders';
 import { DayCell } from '@/features/checklist/Checklist';
 import { DayCellView, summaryText } from '@/features/checklist/itemViews';
+import { ReminderPicker } from '@/features/reminders/ReminderPicker';
 import { TargetEditor } from '@/features/targets/TargetEditor';
-import { formatWeekday } from '@/lib/format';
+import { TimeField } from '@/ui/pickers';
+import { formatTime, formatWeekday } from '@/lib/format';
 import { useCanEdit, useDayColorFor, usePlannerId } from '@/state/planner';
 import { AddButton, Button, Chip, Field, ProgressBar, Sheet, textStyles } from '@/ui/components';
 import { confirm } from '@/ui/confirm';
@@ -98,7 +102,8 @@ export function HabitGrid({
       {rows.length === 0 ? <Text style={text.muted}>{t('week.noHabits')}</Text> : null}
       {rows.map((row) => {
         const habit = byId.get(row.habitId)!;
-        const status = habitStatus(row);
+        // The habit's time, if any, before its target status (K4).
+        const status = [habit.time ? formatTime(habit.time) : null, habitStatus(row)].filter(Boolean).join(' · ') || null;
         const achieved = row.evaluation.achieved === true;
         return (
           <View key={row.habitId} style={[styles.habit, achieved && { backgroundColor: p.surfaceMuted }]}>
@@ -172,6 +177,8 @@ function HabitEditor({
   const [selected, setSelected] = useState<IsoWeekday[]>(weekdaysFromMask(version?.weekdays ?? ALL_DAYS_MASK));
   const [target, setTarget] = useState<Target>(targetOf(version));
   const [hide, setHide] = useState(habit?.hideWhenAchieved ?? false);
+  const [time, setTime] = useState<string | null>(habit?.time ?? null);
+  const [offsets, setOffsets] = useState<number[]>(() => (habit ? getItemOffsets(plannerId, habit.id) : []));
 
   const save = () => {
     const days = selected.length;
@@ -179,11 +186,14 @@ function HabitEditor({
     // "N days a week" can't exceed the selected days (J2, J12).
     const fitted = target.daysPerWeek !== null ? { ...target, daysPerWeek: Math.min(target.daysPerWeek, days) } : target;
     if (!habit) {
-      addHabit(plannerId, weekKey, name, maskFromWeekdays(selected), fitted, hide);
+      const id = addHabit(plannerId, weekKey, name, maskFromWeekdays(selected), fitted, hide, time);
+      if (offsets.length > 0) setItemReminders(plannerId, 'habit', id, offsets);
     } else {
       if (name !== habit.name) renameHabit(habit, name);
       if (hide !== habit.hideWhenAchieved) setHideWhenAchieved(habit, hide);
+      setHabitTime(habit, time);
       setHabitPlan(habit.plannerId, habit.id, weekKey, maskFromWeekdays(selected), fitted);
+      setItemReminders(habit.plannerId, 'habit', habit.id, offsets);
     }
     onClose();
   };
@@ -213,6 +223,9 @@ function HabitEditor({
           );
         })}
       </View>
+      <Text style={text.muted}>{t('item.time')}</Text>
+      <TimeField value={time} onChange={setTime} label={t('item.time')} clearable />
+      <ReminderPicker value={offsets} onChange={setOffsets} hint={time ? undefined : t('reminder.noTimeHint')} />
       <TargetEditor value={target} onChange={setTarget} maxDays={selected.length} />
       {habit ? <Text style={text.muted}>{t('habit.daysHint')}</Text> : null}
       {target.targetType ? (
