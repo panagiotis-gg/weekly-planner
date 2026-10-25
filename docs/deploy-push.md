@@ -23,8 +23,9 @@ You need the Cloudflare account that already hosts the app (Pages).
 ### 2. Check the app address
 
 In `apps/push/wrangler.toml`, `APP_ORIGIN` must be the app's address exactly as Cloudflare
-Pages shows it (for example `https://weekly-planner.pages.dev`). Only that site may talk to the
-service.
+Pages shows it (currently `https://weekly-planner-1tn.pages.dev`; Cloudflare adds a suffix when
+the plain name is taken). Only that site may talk to the service: with any other address,
+"Turn on notifications" fails with "Something went wrong".
 
 ### 3. Create the Worker from GitHub
 

@@ -16,4 +16,4 @@ database_id = "ce0a118d-dcca-43a3-b5f9-0c02276162a1"
 
 [vars]
 # The planner web app's address (Cloudflare Pages). Only it may call this service.
-APP_ORIGIN = "https://weekly-planner.pages.dev"
+APP_ORIGIN = "https://weekly-planner-1tn.pages.dev"
