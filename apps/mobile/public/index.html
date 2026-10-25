@@ -176,8 +176,13 @@
           panel.textContent = lines.join('\n');
         }
         window.__touchDiag = function (msg) { log(msg); };
+        // A tap can register and its action still fail; show script errors next to the taps.
+        window.addEventListener('error', function (e) { log('ERROR ' + String(e.message).slice(0, 120)); });
+        window.addEventListener('unhandledrejection', function (e) {
+          log('ERROR (promise) ' + String((e.reason && e.reason.message) || e.reason).slice(0, 120));
+        });
         // The panel needs <body>; the version is on the Settings page.
-        document.addEventListener('DOMContentLoaded', function () { log('diagnostics on (fallback v2)'); });
+        document.addEventListener('DOMContentLoaded', function () { log('diagnostics on (fallback v3)'); });
         ['touchstart', 'touchend', 'touchcancel', 'click', 'focusin', 'focusout'].forEach(function (type) {
           document.addEventListener(type, function (e) { log(type === 'click' && !e.isTrusted ? 'click(fallback)' : type, e); }, { capture: true, passive: true });
         });
