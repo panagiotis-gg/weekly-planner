@@ -25,6 +25,11 @@ export function getTasksInRange(plannerId: string, from: IsoDate, to: IsoDate): 
   return selectRows<Task>('task', plannerId, `date <= ? AND ${spanEnd} >= ?`, [to, from], byPosition);
 }
 
+/** To-dos with a due day in [from, to] (K5). */
+export function getTodosDueInRange(plannerId: string, from: IsoDate, to: IsoDate): WeeklyTodo[] {
+  return selectRows<WeeklyTodo>('weekly_todo', plannerId, 'due_date BETWEEN ? AND ?', [from, to], byPosition);
+}
+
 export function getWeeklyTodos(plannerId: string, weekKey: IsoDate): WeeklyTodo[] {
   return selectRows<WeeklyTodo>('weekly_todo', plannerId, 'week_key = ?', [weekKey], byPosition);
 }

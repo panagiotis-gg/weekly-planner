@@ -148,16 +148,7 @@
     "discardConfirm": "{{count}} καταγεγραμμένα πατήματα είναι εκτός των νέων ημερών και θα αφαιρεθούν. Να συνεχίσω;"
   },
   "calendar": {
-    "thisWeek": "Αυτή την εβδομάδα",
-    "summaryTasks": "{{done}}/{{total}} εργασίες",
-    "summaryEvents_one": "{{count}} συμβάν",
-    "summaryEvents_other": "{{count}} συμβάντα",
-    "summaryHabits": "συνήθειες {{percent}}%",
-    "nothingPlanned": "Τίποτα προγραμματισμένο αυτή την εβδομάδα",
-    "expand": "Εμφάνιση λεπτομερειών εβδομάδας",
-    "collapse": "Απόκρυψη λεπτομερειών εβδομάδας",
-    "a11yTasks": "ολοκληρώθηκαν {{done}} από {{total}} εργασίες",
-    "a11yEvents": "έχει συμβάντα"
+    "a11yTasks": "ολοκληρώθηκαν {{done}} από {{total}} εργασίες"
   },
   "a11y": {
     "counter": "{{label}}: {{count}} από {{goal}}. Προσθήκη ενός",

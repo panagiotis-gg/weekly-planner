@@ -9,7 +9,7 @@ import { todoView } from '@/features/checklist/itemViews';
 import { TodoCreateSheet, TodoTargetSheet } from '@/features/checklist/TargetSheets';
 import { DayColumn } from '@/features/day/DayColumn';
 import { HabitGrid } from '@/features/habits/HabitGrid';
-import { MiniCalendars } from '@/features/week/MiniCalendars';
+import { MonthCalendars } from '@/features/week/MonthCalendars';
 import { formatMonthDay, formatFullDate, todayIso } from '@/lib/format';
 import { useCanEdit, usePlanner, usePlannerId, PlannerGate } from '@/state/planner';
 import { Card, EditableText, IconButton, SectionTitle } from '@/ui/components';
@@ -58,11 +58,15 @@ function Week({ weekKey }: { weekKey: string }) {
     </View>
   );
 
+  // Nearly full width on phones, across the whole screen when wide, so item names fit (DECISIONS A12).
+  const calendar = (
+    <Card style={wide ? undefined : styles.phoneCalendar}>
+      <MonthCalendars range={range} plannerId={plannerId} />
+    </Card>
+  );
+
   const panel = (
     <View style={styles.panel}>
-      <Card>
-        <MiniCalendars range={range} plannerId={plannerId} habitRows={data.habitRows} />
-      </Card>
       <Card>
         <SectionTitle>{t('week.habits')}</SectionTitle>
         <HabitGrid range={range} habits={data.habits} rows={data.habitRows} schedules={data.schedules} />
@@ -103,6 +107,7 @@ function Week({ weekKey }: { weekKey: string }) {
       {wide ? (
         <ScrollView contentContainerStyle={styles.wideScroll}>
           {header}
+          {calendar}
           <View style={styles.wideBody}>
             <View style={styles.widePanel}>{panel}</View>
             <ScrollView horizontal contentContainerStyle={styles.columns} style={styles.columnsScroll}>
@@ -115,6 +120,7 @@ function Week({ weekKey }: { weekKey: string }) {
       ) : (
         <ScrollView contentContainerStyle={styles.narrowScroll}>
           {header}
+          {calendar}
           {panel}
         </ScrollView>
       )}
@@ -127,6 +133,7 @@ const styles = StyleSheet.create({
   weekTitle: { flex: 1, alignItems: 'center', gap: 2 },
   weekTitleText: { fontSize: 20, fontWeight: '700' },
   panel: { gap: 12 },
+  phoneCalendar: { marginHorizontal: -12, paddingHorizontal: 4 },
   narrowScroll: { padding: 16, gap: 12 },
   wideScroll: { padding: 20, gap: 16 },
   wideBody: { flexDirection: 'row', gap: 16, alignItems: 'flex-start' },

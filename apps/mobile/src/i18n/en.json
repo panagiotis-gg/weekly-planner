@@ -148,16 +148,7 @@
     "discardConfirm": "{{count}} recorded tap(s) fall outside the new days and will be removed. Continue?"
   },
   "calendar": {
-    "thisWeek": "This week",
-    "summaryTasks": "{{done}}/{{total}} tasks",
-    "summaryEvents_one": "{{count}} event",
-    "summaryEvents_other": "{{count}} events",
-    "summaryHabits": "habits {{percent}}%",
-    "nothingPlanned": "Nothing planned this week",
-    "expand": "Show week details",
-    "collapse": "Hide week details",
-    "a11yTasks": "{{done}} of {{total}} tasks done",
-    "a11yEvents": "has events"
+    "a11yTasks": "{{done}} of {{total}} tasks done"
   },
   "a11y": {
     "counter": "{{label}}: {{count}} of {{goal}}. Add one",
