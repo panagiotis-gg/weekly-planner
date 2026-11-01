@@ -10,8 +10,15 @@ import {
 } from './dates';
 
 /** Basic presets (DECISIONS A6). */
-export const RECURRENCE_FREQS = ['daily', 'weekdays', 'weekly', 'monthly', 'yearly'] as const;
+export const RECURRENCE_FREQS = ['daily', 'weekdays', 'weekly', 'monthly', 'yearly', 'month_end', 'first_weekend'] as const;
 export type RecurrenceFreq = (typeof RECURRENCE_FREQS)[number];
+
+/** Every N months, on a day worked out per month (DECISIONS A13). */
+export const RECURRENCE_LIMITS = {
+  intervalMonths: { min: 1, max: 12 },
+  daysBeforeMonthEnd: { min: 0, max: 27 },
+} as const;
+export const isMonthRule = (freq: RecurrenceFreq | null): boolean => freq === 'month_end' || freq === 'first_weekend';
 
 export interface EventLike {
   id: string;
@@ -25,6 +32,12 @@ export interface EventLike {
   recurrenceWeekdays: number | null;
   recurrenceUntil: IsoDate | null;
   recurrenceCount: number | null;
+  /** `month_end` and `first_weekend`: every N months. */
+  recurrenceIntervalMonths?: number | null;
+  /** `month_end`: calendar days back from the month's last day (0 = the last day). */
+  recurrenceDaysBeforeEnd?: number | null;
+  /** `first_weekend`: ISO weekday, 6 = Saturday, 7 = Sunday. */
+  recurrenceWeekendDay?: number | null;
 }
 
 export interface EventExceptionLike {
@@ -66,6 +79,19 @@ function matchesDayRule(event: EventLike, date: IsoDate): boolean {
   }
 }
 
+/** A month rule's date in one month; null if the rule is incomplete. */
+function monthRuleDate(event: EventLike, year: number, month: number): IsoDate | null {
+  if (event.recurrenceFreq === 'month_end') {
+    if (event.recurrenceDaysBeforeEnd == null) return null;
+    return makeDate(year, month, daysInMonth(year, month) - event.recurrenceDaysBeforeEnd);
+  }
+  if (event.recurrenceWeekendDay == null) return null;
+  // The first Saturday's Sunday is always in the same month, so this is the first full weekend.
+  const first = makeDate(year, month, 1);
+  const saturday = addDays(first, (6 - isoWeekday(first) + 7) % 7);
+  return event.recurrenceWeekendDay === 7 ? addDays(saturday, 1) : saturday;
+}
+
 /**
  * Candidate dates in ascending order, from the series start, before until/count are applied.
  * Monthly repeats on the start date's day of month and yearly on its month and day; months or
@@ -81,6 +107,16 @@ function* candidates(event: EventLike): Generator<IsoDate> {
   // A weekly rule without days would never yield; treat it as having no occurrences.
   if (freq === 'weekly' && !event.recurrenceWeekdays) return;
   const start = yearMonthDay(event.startDate);
+  if (isMonthRule(freq)) {
+    const at = (index: number) => monthRuleDate(event, Math.floor(index / 12), (index % 12) + 1);
+    const base = start.year * 12 + start.month - 1;
+    const firstDate = at(base);
+    if (firstDate === null) return;
+    // The first occurrence is on or after the start date; the interval counts from it.
+    const first = firstDate >= event.startDate ? base : base + 1;
+    const step = event.recurrenceIntervalMonths ?? 1;
+    for (let i = 0; ; i++) yield at(first + i * step)!;
+  }
   if (freq === 'monthly') {
     for (let i = 0; ; i++) {
       const monthIndex = start.month - 1 + i;

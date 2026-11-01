@@ -4,11 +4,14 @@ import {
   EventException,
   eventExceptionId,
   IsoDate,
+  isMonthRule,
   isoWeekday,
   isValidIsoDate,
   IsoWeekday,
   maskFromWeekdays,
   maskIncludes,
+  occurrenceDates,
+  RECURRENCE_LIMITS,
   RecurrenceFreq,
   TEXT_LIMITS,
   weekKeyOf,
@@ -31,9 +34,9 @@ import {
 import { getItemOffsets, setItemReminders } from '@/data/repositories/reminders';
 import { selectRows, WriteError } from '@/data/write';
 import { ReminderPicker } from '@/features/reminders/ReminderPicker';
-import { formatWeekday, todayIso } from '@/lib/format';
+import { formatFullDate, formatWeekday, todayIso } from '@/lib/format';
 import { usePlanner, usePlannerId, PlannerGate } from '@/state/planner';
-import { Button, Chip, Field, textStyles } from '@/ui/components';
+import { Button, Chip, Field, Stepper, textStyles } from '@/ui/components';
 import { DateField, TimeField } from '@/ui/pickers';
 import { usePalette } from '@/ui/theme';
 
@@ -41,7 +44,10 @@ const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 type EndsMode = 'never' | 'until' | 'count';
 type Pending = { action: 'save' | 'delete' } | null;
 
-const FREQS: (RecurrenceFreq | null)[] = [null, 'daily', 'weekdays', 'weekly', 'monthly', 'yearly'];
+const FREQS: (RecurrenceFreq | null)[] = [null, 'daily', 'weekdays', 'weekly', 'monthly', 'yearly', 'month_end', 'first_weekend'];
+/** A Saturday and a Sunday, for the weekend day's names. */
+const WEEKEND_DATES: Record<6 | 7, IsoDate> = { 6: '2026-11-07', 7: '2026-11-08' };
+const PREVIEW_COUNT = 3;
 const FREQ_LABEL: Record<string, string> = {
   none: 'event.repeatNone',
   daily: 'event.repeatDaily',
@@ -49,6 +55,8 @@ const FREQ_LABEL: Record<string, string> = {
   weekly: 'event.repeatWeekly',
   monthly: 'event.repeatMonthly',
   yearly: 'event.repeatYearly',
+  month_end: 'event.repeatMonthEnd',
+  first_weekend: 'event.repeatFirstWeekend',
 };
 
 /**
@@ -92,10 +100,16 @@ function EventEditorContent() {
   );
   const [until, setUntil] = useState(event?.recurrenceUntil ?? '');
   const [count, setCount] = useState(event?.recurrenceCount ? String(event.recurrenceCount) : '');
+  const [intervalMonths, setIntervalMonths] = useState(event?.recurrenceIntervalMonths ?? 1);
+  const [daysBeforeEnd, setDaysBeforeEnd] = useState(event?.recurrenceDaysBeforeEnd ?? 3);
+  const [weekendDay, setWeekendDay] = useState<6 | 7>(event?.recurrenceWeekendDay ?? 6);
   const [offsets, setOffsets] = useState<number[]>(() => (event ? getItemOffsets(plannerId, event.id) : []));
   const [errors, setErrors] = useState<string[]>([]);
   const [pending, setPending] = useState<Pending>(null);
 
+  // Month rules always run until an end date (A13).
+  const monthRule = isMonthRule(freq);
+  const ends: EndsMode = monthRule ? 'until' : endsMode;
   const weekDates = weekRange(weekKeyOf(isValidIsoDate(date) ? date : initialDate, planner.weekStartDay), planner.weekStartDay).days;
 
   function validate(): string[] {
@@ -104,8 +118,9 @@ function EventEditorContent() {
     if (!isValidIsoDate(date)) e.push('INVALID_DATE');
     if (!allDay && !TIME_RE.test(start)) e.push('INVALID_TIME');
     if (!allDay && end !== '' && !TIME_RE.test(end)) e.push('INVALID_TIME');
-    if (freq && endsMode === 'until' && !isValidIsoDate(until)) e.push('INVALID_DATE');
-    if (freq && endsMode === 'count' && !(Number(count) > 0 && Number.isInteger(Number(count)))) e.push('INVALID_COUNT');
+    if (monthRule && until === '') e.push('END_DATE_REQUIRED');
+    else if (freq && ends === 'until' && !isValidIsoDate(until)) e.push('INVALID_DATE');
+    if (freq && ends === 'count' && !(Number(count) > 0 && Number.isInteger(Number(count)))) e.push('INVALID_COUNT');
     return [...new Set(e)];
   }
 
@@ -118,8 +133,11 @@ function EventEditorContent() {
       endTime: allDay || end === '' ? null : end,
       recurrenceFreq: freq,
       recurrenceWeekdays: freq === 'weekly' ? maskFromWeekdays(weekdays) : null,
-      recurrenceUntil: freq && endsMode === 'until' ? until : null,
-      recurrenceCount: freq && endsMode === 'count' ? Number(count) : null,
+      recurrenceUntil: freq && ends === 'until' ? until : null,
+      recurrenceCount: freq && ends === 'count' ? Number(count) : null,
+      recurrenceIntervalMonths: monthRule ? intervalMonths : null,
+      recurrenceDaysBeforeEnd: freq === 'month_end' ? daysBeforeEnd : null,
+      recurrenceWeekendDay: freq === 'first_weekend' ? weekendDay : null,
     };
   }
 
@@ -171,6 +189,16 @@ function EventEditorContent() {
     else if (action === 'save') save('only');
     else remove('only');
   };
+
+  // What the month rule works out to, so it can be checked before saving.
+  const nextDates =
+    monthRule && isValidIsoDate(date)
+      ? occurrenceDates(
+          { ...draft(date), id: '', recurrenceUntil: isValidIsoDate(until) ? until : null },
+          date,
+          addDays(date, 800),
+        ).slice(0, PREVIEW_COUNT)
+      : [];
 
   return (
     <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
@@ -227,24 +255,62 @@ function EventEditorContent() {
           })}
         </View>
       ) : null}
+      {monthRule ? (
+        <>
+          <View style={styles.row}>
+            <Text style={[text.body, styles.ruleLabel]}>{t('event.everyMonths')}</Text>
+            <Stepper
+              label={t('event.everyMonths')}
+              value={intervalMonths}
+              min={RECURRENCE_LIMITS.intervalMonths.min}
+              max={RECURRENCE_LIMITS.intervalMonths.max}
+              onChange={setIntervalMonths}
+            />
+          </View>
+          {freq === 'month_end' ? (
+            <View style={styles.row}>
+              <Text style={[text.body, styles.ruleLabel]}>{t('event.daysBeforeEnd')}</Text>
+              <Stepper
+                label={t('event.daysBeforeEnd')}
+                value={daysBeforeEnd}
+                min={RECURRENCE_LIMITS.daysBeforeMonthEnd.min}
+                max={RECURRENCE_LIMITS.daysBeforeMonthEnd.max}
+                onChange={setDaysBeforeEnd}
+              />
+            </View>
+          ) : (
+            <View style={styles.chips}>
+              {([6, 7] as const).map((d) => (
+                <Chip key={d} label={formatWeekday(WEEKEND_DATES[d])} selected={weekendDay === d} onPress={() => setWeekendDay(d)} />
+              ))}
+            </View>
+          )}
+        </>
+      ) : null}
       {freq ? (
         <>
-          <Text style={text.muted}>{t('event.ends')}</Text>
-          <View style={styles.chips}>
-            <Chip label={t('event.endsNever')} selected={endsMode === 'never'} onPress={() => setEndsMode('never')} />
-            <Chip label={t('event.endsOn')} selected={endsMode === 'until'} onPress={() => setEndsMode('until')} />
-            <Chip label={t('event.endsAfter')} selected={endsMode === 'count'} onPress={() => setEndsMode('count')} />
-          </View>
-          {endsMode === 'until' ? (
+          <Text style={text.muted}>{monthRule ? t('event.endsOn') : t('event.ends')}</Text>
+          {!monthRule ? (
+            <View style={styles.chips}>
+              <Chip label={t('event.endsNever')} selected={endsMode === 'never'} onPress={() => setEndsMode('never')} />
+              <Chip label={t('event.endsOn')} selected={endsMode === 'until'} onPress={() => setEndsMode('until')} />
+              <Chip label={t('event.endsAfter')} selected={endsMode === 'count'} onPress={() => setEndsMode('count')} />
+            </View>
+          ) : null}
+          {ends === 'until' ? (
             <DateField value={until || null} onChange={(v) => v && setUntil(v)} label={t('event.endsOn')} min={date} />
           ) : null}
-          {endsMode === 'count' ? (
+          {ends === 'count' ? (
             <View style={styles.row}>
               <Field value={count} onChangeText={setCount} keyboardType="number-pad" style={styles.countField} accessibilityLabel={t('event.occurrences')} />
               <Text style={text.body}>{t('event.occurrences')}</Text>
             </View>
           ) : null}
         </>
+      ) : null}
+
+      {monthRule && nextDates.length > 0 ? (
+        <Text style={text.muted}>{t('event.nextDates', { dates: nextDates.map(formatFullDate).join(', ') })}</Text>
       ) : null}
 
       {errors.map((code) => (
@@ -293,6 +359,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1, gap: 4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   countField: { width: 80 },
+  ruleLabel: { flex: 1 },
   scope: { borderWidth: 1, borderRadius: 12, padding: 12, gap: 10 },
 });
 

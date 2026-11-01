@@ -150,4 +150,10 @@ export const MIGRATIONS: MigrationStep[] = [
   );
   CREATE INDEX reminders_by_item ON reminders (planner_id, item_id);
   `,
+  // Month rules on events: before the last day, first weekend, every N months (DECISIONS A13).
+  `
+  ALTER TABLE events ADD COLUMN recurrence_interval_months INTEGER;
+  ALTER TABLE events ADD COLUMN recurrence_days_before_end INTEGER;
+  ALTER TABLE events ADD COLUMN recurrence_weekend_day INTEGER;
+  `,
 ];

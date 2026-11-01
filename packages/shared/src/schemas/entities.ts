@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { addDays, weekdaysFromMask } from '../dates';
 import { TEXT_LIMITS } from '../limits';
-import { RECURRENCE_FREQS } from '../recurrence';
+import { isMonthRule, RECURRENCE_FREQS, RECURRENCE_LIMITS } from '../recurrence';
 import { TARGET_LIMITS, TARGET_TYPES, targetIssues } from '../targets';
 import {
   hexColorSchema,
@@ -132,6 +132,9 @@ export const eventFields = z.strictObject({
   recurrenceWeekdays: weekdayMaskSchema.nullable(),
   recurrenceUntil: isoDateSchema.nullable(),
   recurrenceCount: z.number().int().positive().nullable(),
+  recurrenceIntervalMonths: limited(RECURRENCE_LIMITS.intervalMonths),
+  recurrenceDaysBeforeEnd: limited(RECURRENCE_LIMITS.daysBeforeMonthEnd),
+  recurrenceWeekendDay: z.literal([6, 7]).nullable(),
   deleted,
 });
 
@@ -191,6 +194,15 @@ export function eventIssues(e: EventFields): string[] {
     issues.push('END_WITHOUT_RECURRENCE');
   }
   if (e.recurrenceUntil !== null && e.recurrenceUntil < e.startDate) issues.push('UNTIL_BEFORE_START');
+  // Month rules need their own fields and an end date (A13); other rules must not have those fields.
+  if (isMonthRule(e.recurrenceFreq)) {
+    if (e.recurrenceUntil === null) issues.push('END_DATE_REQUIRED');
+    if (e.recurrenceIntervalMonths === null) issues.push('RULE_FIELD_REQUIRED');
+  } else if (e.recurrenceIntervalMonths !== null) {
+    issues.push('RULE_FIELD_UNEXPECTED');
+  }
+  if ((e.recurrenceFreq === 'month_end') !== (e.recurrenceDaysBeforeEnd !== null)) issues.push('RULE_FIELD_REQUIRED');
+  if ((e.recurrenceFreq === 'first_weekend') !== (e.recurrenceWeekendDay !== null)) issues.push('RULE_FIELD_REQUIRED');
   return issues;
 }
 

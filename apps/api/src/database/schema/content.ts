@@ -227,15 +227,25 @@ export const events = pgTable(
     recurrenceWeekdays: smallint(),
     recurrenceUntil: date({ mode: 'string' }),
     recurrenceCount: integer(),
+    recurrenceIntervalMonths: smallint(), // month rules: every N months (A13)
+    recurrenceDaysBeforeEnd: smallint(), // month_end: days back from the last day
+    recurrenceWeekendDay: smallint(), // first_weekend: 6 = Saturday, 7 = Sunday
     ...syncColumns(),
   },
   (t) => [
     check(
       'events_recurrence_freq',
-      sql`${t.recurrenceFreq} IN ('daily','weekdays','weekly','monthly','yearly')`,
+      sql`${t.recurrenceFreq} IN ('daily','weekdays','weekly','monthly','yearly','month_end','first_weekend')`,
     ),
     check('events_recurrence_weekdays', sql`${t.recurrenceWeekdays} BETWEEN 1 AND 127`),
     check('events_recurrence_count', sql`${t.recurrenceCount} > 0`),
+    check('events_recurrence_interval_months', sql`${t.recurrenceIntervalMonths} BETWEEN 1 AND 12`),
+    check('events_recurrence_days_before_end', sql`${t.recurrenceDaysBeforeEnd} BETWEEN 0 AND 27`),
+    check('events_recurrence_weekend_day', sql`${t.recurrenceWeekendDay} IN (6, 7)`),
+    check(
+      'events_month_rules',
+      sql`${t.recurrenceFreq} NOT IN ('month_end','first_weekend') OR (${t.recurrenceUntil} IS NOT NULL AND ${t.recurrenceIntervalMonths} IS NOT NULL)`,
+    ),
     check('events_all_day_times', sql`${t.allDay} = (${t.startTime} IS NULL)`),
     check('events_all_day_no_end', sql`NOT ${t.allDay} OR ${t.endTime} IS NULL`),
     check('events_end_after_start', sql`${t.endTime} IS NULL OR ${t.endTime} > ${t.startTime}`),

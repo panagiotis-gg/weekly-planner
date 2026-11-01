@@ -87,7 +87,12 @@
     "scopeThis": "This event",
     "scopeAll": "All events",
     "deleteEvent": "Delete event",
-    "datePlaceholder": "YYYY-MM-DD"
+    "datePlaceholder": "YYYY-MM-DD",
+    "repeatMonthEnd": "Monthly, before the last day",
+    "repeatFirstWeekend": "Monthly, first weekend",
+    "everyMonths": "Every how many months",
+    "daysBeforeEnd": "Days before the last day",
+    "nextDates": "Next: {{dates}}"
   },
   "settings": {
     "title": "Settings",
@@ -117,7 +122,8 @@
     "INVALID_COUNT": "Enter a number of occurrences.",
     "TITLE_REQUIRED": "Enter a title.",
     "otherTab": "Weekly Planner is already open in another tab of this browser. Close the other tab and reload this one.",
-    "generic": "Something went wrong. Please try again."
+    "generic": "Something went wrong. Please try again.",
+    "END_DATE_REQUIRED": "Choose an end date."
   },
   "target": {
     "title": "Target",

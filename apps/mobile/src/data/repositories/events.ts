@@ -22,6 +22,9 @@ export interface EventDraft {
   recurrenceWeekdays: number | null;
   recurrenceUntil: IsoDate | null;
   recurrenceCount: number | null;
+  recurrenceIntervalMonths: number | null;
+  recurrenceDaysBeforeEnd: number | null;
+  recurrenceWeekendDay: 6 | 7 | null;
 }
 
 export function getEvent(plannerId: string, id: string): PlannerEvent | null {

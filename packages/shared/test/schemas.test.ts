@@ -135,6 +135,9 @@ describe('event invariants', () => {
     recurrenceWeekdays: null,
     recurrenceUntil: null,
     recurrenceCount: null,
+    recurrenceIntervalMonths: null,
+    recurrenceDaysBeforeEnd: null,
+    recurrenceWeekendDay: null,
     deleted: false,
   };
 
