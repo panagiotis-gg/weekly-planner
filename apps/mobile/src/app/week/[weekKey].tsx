@@ -12,7 +12,8 @@ import { HabitGrid } from '@/features/habits/HabitGrid';
 import { MonthCalendars } from '@/features/week/MonthCalendars';
 import { formatMonthDay, formatFullDate, todayIso } from '@/lib/format';
 import { useCanEdit, usePlanner, usePlannerId, PlannerGate } from '@/state/planner';
-import { Card, EditableText, IconButton, SectionTitle } from '@/ui/components';
+import { Card, EditableText, IconButton, pressedStyle, SectionTitle } from '@/ui/components';
+import { RiseIn } from '@/ui/motion';
 import { usePalette } from '@/ui/theme';
 
 /** Phones get the Week screen + day pager; ≥ 768 dp gets the multi-column week (DECISIONS F1, F2). */
@@ -49,7 +50,7 @@ function Week({ weekKey }: { weekKey: string }) {
           {t('week.range', { start: formatMonthDay(range.start), end: formatFullDate(range.end) })}
         </Text>
         {weekKey !== currentKey ? (
-          <Pressable onPress={() => goToWeek(currentKey)} accessibilityRole="button" hitSlop={6}>
+          <Pressable onPress={() => goToWeek(currentKey)} accessibilityRole="button" hitSlop={6} style={({ pressed }) => (pressed ? pressedStyle : undefined)}>
             <Text style={{ color: p.accent, fontWeight: '600' }}>{t('common.today')}</Text>
           </Pressable>
         ) : null}
@@ -107,7 +108,7 @@ function Week({ weekKey }: { weekKey: string }) {
       {wide ? (
         <ScrollView contentContainerStyle={styles.wideScroll}>
           {header}
-          {calendar}
+          <RiseIn key={weekKey}>{calendar}</RiseIn>
           <View style={styles.wideBody}>
             <View style={styles.widePanel}>{panel}</View>
             <ScrollView horizontal contentContainerStyle={styles.columns} style={styles.columnsScroll}>
@@ -120,8 +121,10 @@ function Week({ weekKey }: { weekKey: string }) {
       ) : (
         <ScrollView contentContainerStyle={styles.narrowScroll}>
           {header}
-          {calendar}
-          {panel}
+          <RiseIn key={weekKey} style={styles.panel}>
+            {calendar}
+            {panel}
+          </RiseIn>
         </ScrollView>
       )}
     </>

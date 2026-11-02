@@ -1,5 +1,6 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import {
+  Animated,
   Modal,
   Pressable,
   ScrollView,
@@ -15,7 +16,11 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import i18n from '@/i18n';
 import { upper } from '@/lib/format';
+import { animate, RiseIn, useBump } from './motion';
 import { Palette, usePalette } from './theme';
+
+/** Press feedback for anything tappable (DECISIONS L1): style={({ pressed }) => [..., pressed && pressedStyle]}. */
+export const pressedStyle: ViewStyle = { opacity: 0.6, transform: [{ scale: 0.97 }] };
 
 export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
   const p = usePalette();
@@ -48,22 +53,26 @@ export function Checkbox({
 }) {
   const p = usePalette();
   const fill = color ?? p.accent;
+  const scale = useBump(checked);
   return (
-    <Pressable
-      onPress={onToggle}
-      disabled={disabled || !onToggle}
-      hitSlop={6}
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked, disabled }}
-      accessibilityLabel={label}
-      style={[
-        styles.checkbox,
-        { borderColor: checked || color ? fill : p.border, backgroundColor: checked ? fill : 'transparent' },
-        disabled && { opacity: 0.35 },
-      ]}
-    >
-      {checked ? <Text style={[styles.checkmark, { color: color ? p.onDayColor : p.onAccent }]}>✓</Text> : null}
-    </Pressable>
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <Pressable
+        onPress={onToggle}
+        disabled={disabled || !onToggle}
+        hitSlop={6}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked, disabled }}
+        accessibilityLabel={label}
+        style={({ pressed }) => [
+          styles.checkbox,
+          { borderColor: checked || color ? fill : p.border, backgroundColor: checked ? fill : 'transparent' },
+          disabled && { opacity: 0.35 },
+          pressed && pressedStyle,
+        ]}
+      >
+        {checked ? <Text style={[styles.checkmark, { color: color ? p.onDayColor : p.onAccent }]}>✓</Text> : null}
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -91,29 +100,33 @@ export function Counter({
 }) {
   const p = usePalette();
   const fill = color ?? p.accent;
+  const scale = useBump(count);
   return (
-    <Pressable
-      onPress={onAdd}
-      disabled={!onAdd}
-      hitSlop={4}
-      accessibilityRole="button"
-      accessibilityLabel={goal ? i18n.t('a11y.counter', { label, count, goal }) : i18n.t('a11y.counterNoGoal', { label, count })}
-      style={[
-        styles.counter,
-        compact && styles.counterCompact,
-        { borderColor: met || color ? fill : p.border, backgroundColor: met ? fill : 'transparent' },
-      ]}
-    >
-      <Text
-        style={{
-          color: met ? (color ? p.onDayColor : p.onAccent) : count > 0 ? p.text : p.textMuted,
-          fontSize: compact ? 11 : 13,
-          fontVariant: ['tabular-nums'],
-        }}
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <Pressable
+        onPress={onAdd}
+        disabled={!onAdd}
+        hitSlop={4}
+        accessibilityRole="button"
+        accessibilityLabel={goal ? i18n.t('a11y.counter', { label, count, goal }) : i18n.t('a11y.counterNoGoal', { label, count })}
+        style={({ pressed }) => [
+          styles.counter,
+          compact && styles.counterCompact,
+          { borderColor: met || color ? fill : p.border, backgroundColor: met ? fill : 'transparent' },
+          pressed && pressedStyle,
+        ]}
       >
-        {goal ? `${count}/${goal}` : count}
-      </Text>
-    </Pressable>
+        <Text
+          style={{
+            color: met ? (color ? p.onDayColor : p.onAccent) : count > 0 ? p.text : p.textMuted,
+            fontSize: compact ? 11 : 13,
+            fontVariant: ['tabular-nums'],
+          }}
+        >
+          {goal ? `${count}/${goal}` : count}
+        </Text>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -144,10 +157,16 @@ export function Stepper({
 /** Whole-number progress (DECISIONS §A); nothing to count shows an empty bar and "–". */
 export function ProgressBar({ percent, color }: { percent: number | null; color?: string }) {
   const p = usePalette();
+  // Starts at the current value, so only changes animate.
+  const [fill] = useState(() => new Animated.Value(percent ?? 0));
+  useEffect(() => {
+    animate(fill, percent ?? 0, 260).start();
+  }, [fill, percent]);
+  const width = fill.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
   return (
     <View style={styles.progressRow} accessibilityRole="progressbar" accessibilityValue={{ now: percent ?? 0, min: 0, max: 100 }}>
       <View style={[styles.progressTrack, { backgroundColor: p.surfaceMuted }]}>
-        <View style={[styles.progressFill, { width: `${percent ?? 0}%`, backgroundColor: color ?? p.accent }]} />
+        <Animated.View style={[styles.progressFill, { width, backgroundColor: color ?? p.accent }]} />
       </View>
       <Text style={[styles.progressLabel, { color: p.textMuted }]}>{percent === null ? '–' : `${percent}%`}</Text>
     </View>
@@ -169,7 +188,7 @@ export function IconButton({
 }) {
   const p = usePalette();
   return (
-    <Pressable onPress={onPress} hitSlop={8} accessibilityRole="button" accessibilityLabel={label} style={styles.iconButton}>
+    <Pressable onPress={onPress} hitSlop={8} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => [styles.iconButton, pressed && pressedStyle]}>
       <Text style={{ color: color ?? p.textMuted, fontSize: size }}>{glyph}</Text>
     </Pressable>
   );
@@ -194,7 +213,12 @@ export function Button({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
-      style={[styles.button, { backgroundColor: bg, borderColor: variant === 'primary' ? bg : p.border }, disabled && { opacity: 0.5 }]}
+      style={({ pressed }) => [
+        styles.button,
+        { backgroundColor: bg, borderColor: variant === 'primary' ? bg : p.border },
+        disabled && { opacity: 0.5 },
+        pressed && pressedStyle,
+      ]}
     >
       <Text style={[styles.buttonText, { color: fg }]}>{title}</Text>
     </Pressable>
@@ -208,7 +232,11 @@ export function Chip({ label, selected, onPress }: { label: string; selected: bo
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      style={[styles.chip, { borderColor: selected ? p.accent : p.border, backgroundColor: selected ? p.accent : 'transparent' }]}
+      style={({ pressed }) => [
+        styles.chip,
+        { borderColor: selected ? p.accent : p.border, backgroundColor: selected ? p.accent : 'transparent' },
+        pressed && pressedStyle,
+      ]}
     >
       <Text style={{ color: selected ? p.onAccent : p.text, fontSize: 15 }}>{label}</Text>
     </Pressable>
@@ -308,7 +336,7 @@ export function AddRow({ placeholder, onAdd, maxLength }: { placeholder: string;
 export function AddButton({ label, onPress }: { label: string; onPress: () => void }) {
   const p = usePalette();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.addRow}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => [styles.addRow, pressed && pressedStyle]}>
       <Text style={{ color: p.accent, fontSize: 18, width: 22, textAlign: 'center' }}>+</Text>
       <Text style={[styles.editable, { color: p.textMuted, flex: 1 }]}>{label}</Text>
     </Pressable>
@@ -338,12 +366,13 @@ export function Sheet({
         {/* The dimmed backdrop is a sibling behind the sheet, not a wrapper around it: nested
             pressables around text fields left the sheet's buttons unresponsive on iPhone Safari. */}
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel={i18n.t('common.close')} />
-        <View style={[styles.sheet, { backgroundColor: p.surface, borderColor: p.border }]}>
+        {/* Rises only as it opens, before any tap or keyboard; it then stays still (see above). */}
+        <RiseIn distance={24} style={[styles.sheet, { backgroundColor: p.surface, borderColor: p.border }]}>
           <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.sheetContent}>
             <Text style={[styles.sheetTitle, { color: p.text }]}>{title}</Text>
             {children}
           </ScrollView>
-        </View>
+        </RiseIn>
       </View>
     </Modal>
   );

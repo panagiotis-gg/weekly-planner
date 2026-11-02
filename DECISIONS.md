@@ -153,3 +153,15 @@ open in one tab at a time (Web Locks), as before. iOS and Android native builds 
 | K8 | Text size | **iPhone standard sizes** (about 2 px larger): body 17, secondary 15, buttons and options 15–17, headings 13. The seven day cells in habit and to-do rows keep their size so they fit. |
 | K9 | Already done | A reminder is **skipped** when its task, to-do or that day's habit is already done. (Derived limitation: the push service learns this when the app next sends its reminder list, so a tick made while offline can't cancel a reminder.) |
 | K10 | How far ahead | The app sends the push service its reminders for the **next 30 days** and refreshes the list whenever it opens or something changes. If the app isn't opened for 30 days, repeating reminders stop until it is. |
+
+## L. More interactive UI — decided 2026-11-02
+
+Requested as "feedback and motion, gestures, faster adding and editing, better day and agenda views", on all screens, delivered in phases.
+
+| # | Topic | Decision |
+|---|-------|----------|
+| L1 | Feedback and motion | Everything tappable reacts when pressed; ticks and counts pop; progress bars animate; dialogs and changed weeks or days rise in. Skipped when the device asks for reduced motion. |
+| L2 | Swiping a task or to-do row | **Right completes, left deletes**, with an **Undo** bar for a few seconds instead of a confirmation. Weeks, months and days also change by swiping. Long-press and drag reorders or moves items. |
+| L3 | Tapping an item | **Opens its details** (name, time, reminders, actions), replacing in-place name editing and the "⋯" menu. A floating + adds from every screen. |
+| L4 | Day page schedule | **Hourly timeline** with a "now" line; all-day and untimed items in a list above it; tapping an empty hour adds an event at that time. (The user had no preference; this was the recommendation.) |
+| L5 | App opens on | The **week screen**, unchanged. |

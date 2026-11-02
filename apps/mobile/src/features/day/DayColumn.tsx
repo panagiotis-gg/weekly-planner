@@ -11,7 +11,7 @@ import { TaskCreateSheet, TaskTargetSheet } from '@/features/checklist/TargetShe
 import { habitCell, habitStatus } from '@/features/habits/HabitGrid';
 import { formatFullDate, formatTime, formatWeekday, todayIso, upper } from '@/lib/format';
 import { useCanEdit, usePlanner, usePlannerId } from '@/state/planner';
-import { Card, EditableText, IconButton, SectionTitle, textStyles } from '@/ui/components';
+import { Card, EditableText, IconButton, pressedStyle, SectionTitle, textStyles } from '@/ui/components';
 import { dayColor, usePalette } from '@/ui/theme';
 
 /** One day: pastel header, today's focus, events, tasks and the day note (reference planner day column). */
@@ -60,6 +60,7 @@ export function DayColumn({ date, range, compact }: { date: IsoDate; range: Week
                 onPress={() => router.push({ pathname: '/event', params: { date } })}
                 accessibilityRole="button"
                 hitSlop={8}
+                style={({ pressed }) => (pressed ? pressedStyle : undefined)}
               >
                 <Text style={{ color: p.accent, fontWeight: '600' }}>+ {t('day.addEvent')}</Text>
               </Pressable>
@@ -140,7 +141,7 @@ function EventRow({ occurrence: o, canEdit }: { occurrence: Occurrence; canEdit:
         router.push({ pathname: '/event', params: { eventId: o.eventId, originalDate: o.originalDate, date: o.date } })
       }
       accessibilityRole="button"
-      style={styles.eventRow}
+      style={({ pressed }) => [styles.eventRow, pressed && pressedStyle]}
     >
       <Text style={[styles.eventTime, { color: p.textMuted }]}>{time}</Text>
       <Text style={{ color: p.text, flex: 1, fontSize: 17 }}>

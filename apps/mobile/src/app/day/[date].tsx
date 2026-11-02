@@ -7,6 +7,7 @@ import { DayColumn } from '@/features/day/DayColumn';
 import { formatWeekday, todayIso } from '@/lib/format';
 import { PlannerGate, usePlanner } from '@/state/planner';
 import { IconButton } from '@/ui/components';
+import { RiseIn } from '@/ui/motion';
 import { usePalette } from '@/ui/theme';
 
 /** Horizontal distance (px) a swipe must travel to change the day. */
@@ -68,7 +69,9 @@ function DayPage({ date }: { date: IsoDate }) {
       />
       {/* key: a new day starts scrolled to the top. */}
       <ScrollView key={date} contentContainerStyle={styles.page}>
-        <DayColumn date={date} range={weekRange(weekKey, planner.weekStartDay)} />
+        <RiseIn>
+          <DayColumn date={date} range={weekRange(weekKey, planner.weekStartDay)} />
+        </RiseIn>
       </ScrollView>
     </View>
   );

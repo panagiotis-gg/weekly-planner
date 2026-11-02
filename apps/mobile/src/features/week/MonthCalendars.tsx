@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useDayColorFor } from '@/state/planner';
 import { formatMonth, formatMonthDay, formatTime, formatWeekday, todayIso, upper } from '@/lib/format';
+import { pressedStyle } from '@/ui/components';
 import { Palette, usePalette } from '@/ui/theme';
 import { CalendarItem, DayOverview, useCalendarOverview } from './useCalendarOverview';
 
@@ -114,7 +115,7 @@ export function MonthCalendars({ range, plannerId }: { range: WeekRange; planner
                       onPress={() => router.push({ pathname: '/day/[date]', params: { date } })}
                       accessibilityRole="button"
                       accessibilityLabel={cellLabel(date, info)}
-                      style={styles.cell}
+                      style={({ pressed }) => [styles.cell, pressed && pressedStyle]}
                     >
                       <View style={styles.ringBox}>
                         {info?.taskPercent != null ? <ProgressRing percent={info.taskPercent} p={p} color={color} /> : null}
