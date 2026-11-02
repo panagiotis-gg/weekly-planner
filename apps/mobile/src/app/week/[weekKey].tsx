@@ -1,4 +1,4 @@
-import { isWeekKey, isValidIsoDate, shiftWeek, TEXT_LIMITS, weekKeyOf, WeeklyTodo } from '@planner/shared';
+import { isWeekKey, isValidIsoDate, makeDate, shiftWeek, TEXT_LIMITS, weekKeyOf, WeeklyTodo, yearMonthDay } from '@planner/shared';
 import { Redirect, router, Stack, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
@@ -14,6 +14,7 @@ import { MonthCalendars } from '@/features/week/MonthCalendars';
 import { formatMonthDay, formatFullDate, todayIso } from '@/lib/format';
 import { useCanEdit, usePlanner, usePlannerId, PlannerGate } from '@/state/planner';
 import { Card, EditableText, IconButton, pressedStyle, SectionTitle } from '@/ui/components';
+import { usePageSwipe } from '@/ui/gestures';
 import { RiseIn } from '@/ui/motion';
 import { usePalette } from '@/ui/theme';
 
@@ -43,6 +44,15 @@ function Week({ weekKey }: { weekKey: string }) {
   const goToWeek = (key: string) => router.replace({ pathname: '/week/[weekKey]', params: { weekKey: key } });
   const currentKey = weekKeyOf(todayIso(), planner.weekStartDay);
 
+  // Swiping: anywhere changes the week, on the calendar the month (L2). Phones only: on wide
+  // screens the day columns scroll sideways.
+  const weekSwipe = usePageSwipe((step) => goToWeek(shiftWeek(weekKey, step)));
+  const monthSwipe = usePageSwipe((step) => {
+    const { year, month } = yearMonthDay(step === 1 ? range.end : range.start);
+    const index = year * 12 + month - 1 + step;
+    goToWeek(weekKeyOf(makeDate(Math.floor(index / 12), (index % 12) + 1, 1), planner.weekStartDay));
+  });
+
   const header = (
     <View style={styles.weekHeader}>
       <IconButton glyph="‹" size={26} label={t('common.previous')} onPress={() => goToWeek(shiftWeek(weekKey, -1))} />
@@ -62,9 +72,11 @@ function Week({ weekKey }: { weekKey: string }) {
 
   // Nearly full width on phones, across the whole screen when wide, so item names fit (DECISIONS A12).
   const calendar = (
-    <Card style={wide ? undefined : styles.phoneCalendar}>
-      <MonthCalendars range={range} plannerId={plannerId} />
-    </Card>
+    <View {...monthSwipe}>
+      <Card style={wide ? undefined : styles.phoneCalendar}>
+        <MonthCalendars range={range} plannerId={plannerId} />
+      </Card>
+    </View>
   );
 
   const panel = (
@@ -106,7 +118,7 @@ function Week({ weekKey }: { weekKey: string }) {
           headerRight: () => <IconButton glyph="⚙" size={20} label={t('settings.title')} onPress={() => router.push('/settings')} />,
         }}
       />
-      <View style={styles.screen}>
+      <View style={styles.screen} {...(wide ? undefined : weekSwipe)}>
       {wide ? (
         <ScrollView contentContainerStyle={styles.wideScroll}>
           {header}

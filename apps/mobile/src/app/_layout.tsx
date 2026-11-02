@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { listenForNotificationTaps } from '@/features/reminders/notificationTaps';
 import { PlannerProvider } from '@/state/planner';
+import { DragLayer } from '@/ui/gestures';
 import { usePalette } from '@/ui/theme';
 import { UndoBar } from '@/ui/undo';
 
@@ -40,6 +41,7 @@ export default function RootLayout() {
       <PlannerProvider>
         <AppStack />
         <UndoBar />
+        <DragLayer />
       </PlannerProvider>
     </SafeAreaProvider>
   );

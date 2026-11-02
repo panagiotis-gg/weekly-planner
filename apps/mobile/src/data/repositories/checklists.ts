@@ -108,15 +108,24 @@ export const deleteItem = (kind: Kind, item: Task | WeeklyTodo) =>
 export const restoreItem = (kind: Kind, item: Task | WeeklyTodo) =>
   writeFields(kind, item.id, item.plannerId, { deleted: false });
 
-/** Move one step up or down: only the moved row's position changes. */
+/** Move one step up or down. */
 export function moveWithinList<T extends { id: string; plannerId: string; position: string }>(
   kind: Kind,
   list: T[],
   index: number,
   direction: -1 | 1,
 ): void {
-  const target = index + direction;
-  if (target < 0 || target >= list.length) return;
+  moveToIndex(kind, list, index, index + direction);
+}
+
+/** Move a row to another place in its list: only the moved row's position changes. */
+export function moveToIndex<T extends { id: string; plannerId: string; position: string }>(
+  kind: Kind,
+  list: T[],
+  index: number,
+  target: number,
+): void {
+  if (target === index || target < 0 || target >= list.length) return;
   const item = list[index]!;
   const without = list.filter((_, i) => i !== index);
   // After removing the item, insert it at `target`: between without[target-1] and without[target].

@@ -1,18 +1,15 @@
 import { addDays, IsoDate, isValidIsoDate, weekKeyOf, weekRange } from '@planner/shared';
 import { Redirect, router, Stack, useLocalSearchParams } from 'expo-router';
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PanResponder, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { AddFab, FAB_ROOM } from '@/features/add/AddFab';
 import { DayColumn } from '@/features/day/DayColumn';
 import { formatWeekday, todayIso } from '@/lib/format';
 import { PlannerGate, usePlanner } from '@/state/planner';
 import { IconButton } from '@/ui/components';
+import { usePageSwipe } from '@/ui/gestures';
 import { RiseIn } from '@/ui/motion';
 import { usePalette } from '@/ui/theme';
-
-/** Horizontal distance (px) a swipe must travel to change the day. */
-const SWIPE_DISTANCE = 60;
 
 function DayScreenContent() {
   const { date } = useLocalSearchParams<{ date: string }>();
@@ -35,20 +32,10 @@ function DayPage({ date }: { date: IsoDate }) {
   const weekKey = weekKeyOf(date, planner.weekStartDay);
   const range = weekRange(weekKey, planner.weekStartDay);
 
-  const swipe = useMemo(() => {
-    const go = (step: number) => router.setParams({ date: addDays(date, step) });
-    return PanResponder.create({
-      // Claim only clearly horizontal drags, so vertical scrolling of the day keeps working.
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 24 && Math.abs(g.dx) > Math.abs(g.dy) * 2,
-      onPanResponderRelease: (_, g) => {
-        if (g.dx <= -SWIPE_DISTANCE) go(1);
-        else if (g.dx >= SWIPE_DISTANCE) go(-1);
-      },
-    });
-  }, [date]);
+  const swipe = usePageSwipe((step) => router.setParams({ date: addDays(date, step) }));
 
   return (
-    <View style={styles.flex} {...swipe.panHandlers}>
+    <View style={styles.flex} {...swipe}>
       <Stack.Screen
         options={{
           title: formatWeekday(date),

@@ -1,13 +1,14 @@
 import { checklistProgress, IsoDate, Task, taskDates, TEXT_LIMITS, WeeklyTodo } from '@planner/shared';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { deleteItem, moveTaskToDate, moveWithinList, restoreItem, setDone } from '@/data/repositories/checklists';
-import { countCompletionsOutside } from '@/data/repositories/completions';
+import { deleteItem, moveTaskToDate, moveToIndex, moveWithinList, restoreItem, setDone } from '@/data/repositories/checklists';
+import { countCompletionsOutside, removeLatestCompletion } from '@/data/repositories/completions';
 import { formatMonthDay, formatWeekday } from '@/lib/format';
 import { useCanEdit, useDayColorFor } from '@/state/planner';
 import { AddButton, AddRow, Button, Checkbox, Counter, pressedStyle, ProgressBar, Sheet, textStyles } from '@/ui/components';
 import { confirm } from '@/ui/confirm';
+import { dropRow, startDrag, SwipeRow, useDragStore } from '@/ui/gestures';
 import { usePalette } from '@/ui/theme';
 import { offerUndo } from '@/ui/undo';
 import { DayCellView, itemWhen, ItemView } from './itemViews';
@@ -28,6 +29,7 @@ export function DayCell({ cell, label, compact, color }: { cell: DayCellView; la
  * Checklist with progress bar: daily tasks or weekly to-dos. Done items are struck through;
  * items with a target show a checkbox or counter per day and count partially (J5, J6).
  * Tapping an item opens its details: name, time, reminders, target, and reorder / move / delete (L3).
+ * Swipe right completes, swipe left deletes; long-press and drag reorders or moves to a day (L2).
  */
 export function Checklist({
   kind,
@@ -64,6 +66,9 @@ export function Checklist({
   const colorFor = useDayColorFor();
   const [actionsFor, setActionsFor] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
+  const listId = useId();
+  const dragFrom = useDragStore((s) => (s.drag?.listId === listId ? s.drag.fromIndex : null));
+  const dragOver = useDragStore((s) => (s.drag?.listId === listId ? s.drag.overIndex : null));
   const progress = checklistProgress(items.map((i) => ({ done: views.get(i.id)?.struck ?? false, fraction: views.get(i.id)?.fraction })));
   const selected = actionsFor !== null ? items[actionsFor] : undefined;
   const selectedView = selected ? views.get(selected.id) : undefined;
@@ -81,28 +86,72 @@ export function Checklist({
     else run();
   };
 
+  const remove = (item: Item) => {
+    deleteItem(kind, item);
+    offerUndo(t('undo.deleted', { title: item.title }), () => restoreItem(kind, item));
+  };
+
+  const completeDone = (item: Item, view: ItemView) => {
+    view.onToggle?.();
+    if (!view.checked) offerUndo(t('undo.completed', { title: item.title }), () => setDone(kind, item, false));
+  };
+
+  /** What swiping right does: ticks a plain item, or records one on today's cell; to-dos with a day strip have no single cell. */
+  const swipeComplete = (item: Item, view: ItemView): (() => void) | undefined => {
+    if (view.control === 'done') return () => completeDone(item, view);
+    const cell = view.control === 'cell' ? view.cell : undefined;
+    if (!cell || view.struck) return undefined;
+    return () => {
+      cell.onPress();
+      if (cell.kind === 'check' || (cell.goal !== null && cell.count + 1 >= cell.goal)) {
+        offerUndo(t('undo.completed', { title: item.title }), () => removeLatestCompletion(item.plannerId, item.id, cell.date));
+      }
+    };
+  };
+
+  const beginDrag = (item: Item, index: number) => {
+    const task = kind === 'task' ? (item as Task) : null;
+    startDrag(
+      {
+        title: item.title,
+        listId,
+        fromIndex: index,
+        dates: (task ? (moveTargets ?? []) : [])
+          .filter((d) => d !== task?.date)
+          .map((date) => ({ date, label: `${formatWeekday(date, 'short')} ${Number(date.slice(8))}` })),
+      },
+      ({ index: to, date }) => {
+        if (date && task) moveTask(task, date);
+        else if (to !== null) moveToIndex(kind, items, index, to);
+      },
+    );
+  };
+
   return (
     <View style={styles.wrap}>
       <ProgressBar percent={progress.percent} color={progressColor} />
       {items.map((item, index) => {
         const view = views.get(item.id);
         if (!view) return null;
-        return (
-          <View key={item.id} style={styles.item}>
+        const content = (
+          <View
+            {...dropRow(listId, index)}
+            style={[
+              styles.item,
+              dragFrom === index && styles.dragging,
+              dragFrom !== null && dragOver === index && dragOver !== dragFrom && {
+                borderColor: p.accent,
+                ...(dragOver < dragFrom ? styles.dropAbove : styles.dropBelow),
+              },
+            ]}
+          >
             <View style={styles.row}>
               {view.control === 'done' ? (
                 <Checkbox
                   checked={view.checked}
                   label={item.title}
                   color={color}
-                  onToggle={
-                    canEdit
-                      ? () => {
-                          view.onToggle?.();
-                          if (!view.checked) offerUndo(t('undo.completed', { title: item.title }), () => setDone(kind, item, false));
-                        }
-                      : undefined
-                  }
+                  onToggle={canEdit ? () => completeDone(item, view) : undefined}
                 />
               ) : view.control === 'cell' && view.cell ? (
                 <DayCell cell={view.cell} label={item.title} color={color} />
@@ -110,6 +159,8 @@ export function Checklist({
               <Pressable
                 disabled={!canEdit}
                 onPress={() => setActionsFor(index)}
+                onLongPress={canEdit ? () => beginDrag(item, index) : undefined}
+                delayLongPress={350}
                 accessibilityRole="button"
                 accessibilityLabel={`${t('common.edit')}: ${item.title}`}
                 style={({ pressed }) => [styles.titleCol, pressed && pressedStyle]}
@@ -131,6 +182,13 @@ export function Checklist({
               </View>
             ) : null}
           </View>
+        );
+        return canEdit ? (
+          <SwipeRow key={item.id} onSwipeRight={swipeComplete(item, view)} onSwipeLeft={() => remove(item)}>
+            {content}
+          </SwipeRow>
+        ) : (
+          <View key={item.id}>{content}</View>
         );
       })}
       {canEdit && renderCreate ? <AddButton label={addPlaceholder} onPress={() => setCreating(true)} /> : null}
@@ -196,9 +254,8 @@ export function Checklist({
                 title={t('common.delete')}
                 variant="danger"
                 onPress={() => {
-                  deleteItem(kind, selected);
+                  remove(selected);
                   close();
-                  offerUndo(t('undo.deleted', { title: selected.title }), () => restoreItem(kind, selected));
                 }}
               />
             </View>
@@ -212,6 +269,9 @@ export function Checklist({
 const styles = StyleSheet.create({
   wrap: { gap: 6 },
   item: { gap: 4 },
+  dragging: { opacity: 0.4 },
+  dropAbove: { borderTopWidth: 2 },
+  dropBelow: { borderBottomWidth: 2 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   titleCol: { flex: 1 },
   status: { fontSize: 13, marginTop: -2 },
