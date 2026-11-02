@@ -42,6 +42,8 @@ export function Checklist({
   color,
   renderTargetEditor,
   renderCreate,
+  selectedId,
+  onSelect,
 }: {
   kind: 'task' | 'weekly_todo';
   items: Item[];
@@ -58,13 +60,20 @@ export function Checklist({
   color?: string;
   /** The editable part of an item's details. */
   renderTargetEditor?: (item: Item, close: () => void) => ReactNode;
+  /** Which item's details are open, when something outside the list can open them (the timeline). */
+  selectedId?: string | null;
+  onSelect?: (id: string | null) => void;
 }) {
   const { t } = useTranslation();
   const p = usePalette();
   const text = textStyles(p);
   const canEdit = useCanEdit();
   const colorFor = useDayColorFor();
-  const [actionsFor, setActionsFor] = useState<number | null>(null);
+  const [ownSelectedId, setOwnSelectedId] = useState<string | null>(null);
+  const openId = selectedId !== undefined ? selectedId : ownSelectedId;
+  const setOpenId = onSelect ?? setOwnSelectedId;
+  const openIndex = items.findIndex((i) => i.id === openId);
+  const actionsFor = openIndex >= 0 ? openIndex : null;
   const [creating, setCreating] = useState(false);
   const listId = useId();
   const dragFrom = useDragStore((s) => (s.drag?.listId === listId ? s.drag.fromIndex : null));
@@ -73,7 +82,7 @@ export function Checklist({
   const selected = actionsFor !== null ? items[actionsFor] : undefined;
   const selectedView = selected ? views.get(selected.id) : undefined;
   const close = () => {
-    setActionsFor(null);
+    setOpenId(null);
   };
 
   const moveTask = (task: Task, date: IsoDate) => {
@@ -158,7 +167,7 @@ export function Checklist({
               ) : null}
               <Pressable
                 disabled={!canEdit}
-                onPress={() => setActionsFor(index)}
+                onPress={() => setOpenId(item.id)}
                 onLongPress={canEdit ? () => beginDrag(item, index) : undefined}
                 delayLongPress={350}
                 accessibilityRole="button"
@@ -209,19 +218,13 @@ export function Checklist({
                   title={`↑ ${t('common.moveUp')}`}
                   variant="secondary"
                   disabled={actionsFor === 0}
-                  onPress={() => {
-                    moveWithinList(kind, items, actionsFor, -1);
-                    setActionsFor(actionsFor - 1);
-                  }}
+                  onPress={() => moveWithinList(kind, items, actionsFor, -1)}
                 />
                 <Button
                   title={`↓ ${t('common.moveDown')}`}
                   variant="secondary"
                   disabled={actionsFor === items.length - 1}
-                  onPress={() => {
-                    moveWithinList(kind, items, actionsFor, 1);
-                    setActionsFor(actionsFor + 1);
-                  }}
+                  onPress={() => moveWithinList(kind, items, actionsFor, 1)}
                 />
               </View>
               {selectedView?.onUndo ? (

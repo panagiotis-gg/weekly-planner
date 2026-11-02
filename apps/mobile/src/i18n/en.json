@@ -45,7 +45,9 @@
     "moveTo": "Move to another day",
     "nextWeekSameDay": "Same day next week",
     "habits": "Today's habits",
-    "thisWeek": "this week"
+    "thisWeek": "this week",
+    "schedule": "Schedule",
+    "addEventAt": "New event at {{time}}"
   },
   "habit": {
     "edit": "Edit habit",

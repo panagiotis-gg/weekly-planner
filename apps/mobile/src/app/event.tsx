@@ -71,7 +71,7 @@ function EventEditorContent() {
   const text = textStyles(p);
   const plannerId = usePlannerId();
   const planner = usePlanner();
-  const params = useLocalSearchParams<{ date?: string; eventId?: string; originalDate?: string }>();
+  const params = useLocalSearchParams<{ date?: string; eventId?: string; originalDate?: string; start?: string }>();
 
   const event = params.eventId ? getEvent(plannerId, params.eventId) : null;
   const isRecurring = !!event?.recurrenceFreq;
@@ -91,7 +91,8 @@ function EventEditorContent() {
   const [title, setTitle] = useState(source?.title ?? '');
   const [date, setDate] = useState<string>(initialDate);
   const [allDay, setAllDay] = useState(source?.allDay ?? false);
-  const [start, setStart] = useState(source?.startTime ?? '09:00');
+  // A new event can start at the hour tapped on the timeline (L4).
+  const [start, setStart] = useState(source?.startTime ?? (params.start && TIME_RE.test(params.start) ? params.start : '09:00'));
   const [end, setEnd] = useState(source?.endTime ?? '');
   const [freq, setFreq] = useState<RecurrenceFreq | null>(event?.recurrenceFreq ?? null);
   const [weekdays, setWeekdays] = useState<IsoWeekday[]>(

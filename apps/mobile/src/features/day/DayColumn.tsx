@@ -11,6 +11,7 @@ import { Checklist, DayCell } from '@/features/checklist/Checklist';
 import { taskView } from '@/features/checklist/itemViews';
 import { TaskCreateSheet, TaskTargetSheet } from '@/features/checklist/TargetSheets';
 import { habitCell, HabitEditor, habitStatus } from '@/features/habits/HabitGrid';
+import { DayTimeline, TimelineItem } from './DayTimeline';
 import { formatFullDate, formatTime, formatWeekday, todayIso, upper } from '@/lib/format';
 import { useCanEdit, usePlanner, usePlannerId } from '@/state/planner';
 import { Card, EditableText, IconButton, pressedStyle, SectionTitle, textStyles } from '@/ui/components';
@@ -25,12 +26,43 @@ export function DayColumn({ date, range, compact }: { date: IsoDate; range: Week
   const planner = usePlanner();
   const canEdit = useCanEdit();
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
+  const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const { entry, tasks, occurrences, todaysHabits, counts, spanCounts } = useDayData(plannerId, date);
   const taskViews = new Map(tasks.map((task) => [task.id, taskView(task, date, counts, spanCounts)]));
   const color = dayColor(p, isoWeekday(date), planner.dayColors);
   const isToday = date === todayIso();
   // Tasks can move to any day of the displayed week, or one week ahead.
   const moveTargets = [...range.days, addDays(date, 7)];
+  // The day page shows an hourly timeline (L4); the narrow columns of the wide week keep the list.
+  const openEvent = (o: Occurrence) =>
+    router.push({ pathname: '/event', params: { eventId: o.eventId, originalDate: o.originalDate, date: o.date } });
+  const timed: TimelineItem[] = [
+    ...occurrences
+      .filter((o) => !o.allDay)
+      .map((o) => ({
+        id: `event:${o.eventId}:${o.originalDate}`,
+        title: o.title,
+        start: o.startTime!,
+        end: o.endTime,
+        kind: 'event' as const,
+        done: false,
+        repeating: o.isRecurring,
+        onPress: () => openEvent(o),
+      })),
+    ...tasks
+      .filter((task) => task.time !== null)
+      .map((task) => ({
+        id: `task:${task.id}`,
+        title: task.title,
+        start: task.time!,
+        end: null,
+        kind: 'task' as const,
+        done: taskViews.get(task.id)?.struck ?? false,
+        repeating: false,
+        onPress: () => setOpenTaskId(task.id),
+      })),
+  ];
+  const listedEvents = compact ? occurrences : occurrences.filter((o) => o.allDay);
 
   return (
     <View style={[styles.column, compact && styles.compact]}>
@@ -70,12 +102,13 @@ export function DayColumn({ date, range, compact }: { date: IsoDate; range: Week
             ) : null
           }
         >
-          {t('day.events')}
+          {t(compact ? 'day.events' : 'day.schedule')}
         </SectionTitle>
-        {occurrences.length === 0 ? <Text style={text.muted}>{t('common.noItems')}</Text> : null}
-        {occurrences.map((o) => (
+        {compact && occurrences.length === 0 ? <Text style={text.muted}>{t('common.noItems')}</Text> : null}
+        {listedEvents.map((o) => (
           <EventRow key={`${o.eventId}:${o.originalDate}`} occurrence={o} canEdit={canEdit} />
         ))}
+        {!compact ? <DayTimeline date={date} items={timed} color={color} canEdit={canEdit} /> : null}
       </Card>
 
       {todaysHabits.length > 0 ? (
@@ -119,6 +152,8 @@ export function DayColumn({ date, range, compact }: { date: IsoDate; range: Week
           progressColor={color}
           color={color}
           renderTargetEditor={(item, close) => <TaskTargetSheet task={item as Task} onDone={close} />}
+          selectedId={openTaskId}
+          onSelect={setOpenTaskId}
         />
       </Card>
 
