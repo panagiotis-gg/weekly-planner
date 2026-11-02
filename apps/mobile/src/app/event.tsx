@@ -29,6 +29,7 @@ import {
   editOccurrence,
   EventDraft,
   getEvent,
+  restoreEvent,
   updateEvent,
 } from '@/data/repositories/events';
 import { getItemOffsets, setItemReminders } from '@/data/repositories/reminders';
@@ -39,6 +40,7 @@ import { usePlanner, usePlannerId, PlannerGate } from '@/state/planner';
 import { Button, Chip, Field, Stepper, textStyles } from '@/ui/components';
 import { DateField, TimeField } from '@/ui/pickers';
 import { usePalette } from '@/ui/theme';
+import { offerUndo } from '@/ui/undo';
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 type EndsMode = 'never' | 'until' | 'count';
@@ -180,7 +182,11 @@ function EventEditorContent() {
 
   function remove(scope: 'this' | 'all' | 'only') {
     if (!event) return;
-    run(() => (scope === 'this' && originalDate ? cancelOccurrence(event, originalDate) : deleteEvent(event)));
+    run(() => {
+      if (scope === 'this' && originalDate) return cancelOccurrence(event, originalDate);
+      deleteEvent(event);
+      offerUndo(t('undo.deleted', { title: event.title }), () => restoreEvent(event));
+    });
   }
 
   const ask = (action: 'save' | 'delete') => {

@@ -104,6 +104,10 @@ export const renameItem = (kind: Kind, item: Task | WeeklyTodo, title: string) =
 export const deleteItem = (kind: Kind, item: Task | WeeklyTodo) =>
   writeFields(kind, item.id, item.plannerId, { deleted: true });
 
+/** Undo of deleteItem; its reminders were left in place. */
+export const restoreItem = (kind: Kind, item: Task | WeeklyTodo) =>
+  writeFields(kind, item.id, item.plannerId, { deleted: false });
+
 /** Move one step up or down: only the moved row's position changes. */
 export function moveWithinList<T extends { id: string; plannerId: string; position: string }>(
   kind: Kind,

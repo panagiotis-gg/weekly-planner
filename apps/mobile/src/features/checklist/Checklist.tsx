@@ -1,14 +1,15 @@
 import { checklistProgress, IsoDate, Task, taskDates, TEXT_LIMITS, WeeklyTodo } from '@planner/shared';
 import { ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Text, View } from 'react-native';
-import { deleteItem, moveTaskToDate, moveWithinList, renameItem } from '@/data/repositories/checklists';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { deleteItem, moveTaskToDate, moveWithinList, restoreItem, setDone } from '@/data/repositories/checklists';
 import { countCompletionsOutside } from '@/data/repositories/completions';
 import { formatMonthDay, formatWeekday } from '@/lib/format';
 import { useCanEdit, useDayColorFor } from '@/state/planner';
-import { AddButton, AddRow, Button, Checkbox, Counter, EditableText, IconButton, ProgressBar, Sheet, textStyles } from '@/ui/components';
+import { AddButton, AddRow, Button, Checkbox, Counter, pressedStyle, ProgressBar, Sheet, textStyles } from '@/ui/components';
 import { confirm } from '@/ui/confirm';
 import { usePalette } from '@/ui/theme';
+import { offerUndo } from '@/ui/undo';
 import { DayCellView, itemWhen, ItemView } from './itemViews';
 
 type Item = Task | WeeklyTodo;
@@ -26,7 +27,7 @@ export function DayCell({ cell, label, compact, color }: { cell: DayCellView; la
 /**
  * Checklist with progress bar: daily tasks or weekly to-dos. Done items are struck through;
  * items with a target show a checkbox or counter per day and count partially (J5, J6).
- * Tap a title to edit it; "⋯" opens reorder / move / target / undo / delete.
+ * Tapping an item opens its details: name, time, reminders, target, and reorder / move / delete (L3).
  */
 export function Checklist({
   kind,
@@ -53,7 +54,7 @@ export function Checklist({
   progressColor?: string;
   /** Day colour for the rows' checkboxes and counters (a day's tasks). */
   color?: string;
-  /** Target editor shown inside the item menu. */
+  /** The editable part of an item's details. */
   renderTargetEditor?: (item: Item, close: () => void) => ReactNode;
 }) {
   const { t } = useTranslation();
@@ -62,14 +63,12 @@ export function Checklist({
   const canEdit = useCanEdit();
   const colorFor = useDayColorFor();
   const [actionsFor, setActionsFor] = useState<number | null>(null);
-  const [editingTarget, setEditingTarget] = useState(false);
   const [creating, setCreating] = useState(false);
   const progress = checklistProgress(items.map((i) => ({ done: views.get(i.id)?.struck ?? false, fraction: views.get(i.id)?.fraction })));
   const selected = actionsFor !== null ? items[actionsFor] : undefined;
   const selectedView = selected ? views.get(selected.id) : undefined;
   const close = () => {
     setActionsFor(null);
-    setEditingTarget(false);
   };
 
   const moveTask = (task: Task, date: IsoDate) => {
@@ -92,24 +91,34 @@ export function Checklist({
           <View key={item.id} style={styles.item}>
             <View style={styles.row}>
               {view.control === 'done' ? (
-                <Checkbox checked={view.checked} label={item.title} color={color} onToggle={canEdit ? view.onToggle : undefined} />
+                <Checkbox
+                  checked={view.checked}
+                  label={item.title}
+                  color={color}
+                  onToggle={
+                    canEdit
+                      ? () => {
+                          view.onToggle?.();
+                          if (!view.checked) offerUndo(t('undo.completed', { title: item.title }), () => setDone(kind, item, false));
+                        }
+                      : undefined
+                  }
+                />
               ) : view.control === 'cell' && view.cell ? (
                 <DayCell cell={view.cell} label={item.title} color={color} />
               ) : null}
-              <View style={styles.titleCol}>
-                <EditableText
-                  value={item.title}
-                  label={item.title}
-                  maxLength={TEXT_LIMITS.title}
-                  editable={canEdit}
-                  onSave={(title) => (title.trim() ? renameItem(kind, item, title) : undefined)}
-                  style={view.struck ? text.done : undefined}
-                />
+              <Pressable
+                disabled={!canEdit}
+                onPress={() => setActionsFor(index)}
+                accessibilityRole="button"
+                accessibilityLabel={`${t('common.edit')}: ${item.title}`}
+                style={({ pressed }) => [styles.titleCol, pressed && pressedStyle]}
+              >
+                <Text style={[text.body, view.struck && text.done]}>{item.title}</Text>
                 {itemWhen(item) || view.status ? (
                   <Text style={[text.muted, styles.status]}>{[itemWhen(item), view.status].filter(Boolean).join(' · ')}</Text>
                 ) : null}
-              </View>
-              {canEdit ? <IconButton glyph="⋯" label={t('common.edit')} onPress={() => setActionsFor(index)} /> : null}
+              </Pressable>
             </View>
             {view.strip ? (
               <View style={styles.strip}>
@@ -132,11 +141,10 @@ export function Checklist({
         </Sheet>
       ) : null}
 
-      <Sheet visible={selected !== undefined} onClose={close} title={selected?.title ?? ''}>
+      <Sheet visible={selected !== undefined} onClose={close} title={t('item.details').replace(/…$/, '')}>
         {selected && actionsFor !== null ? (
-          editingTarget && renderTargetEditor ? (
-            renderTargetEditor(selected, close)
-          ) : (
+          <>
+            <View key={selected.id}>{renderTargetEditor?.(selected, close)}</View>
             <View style={styles.actions}>
               <View style={styles.actionRow}>
                 <Button
@@ -158,9 +166,6 @@ export function Checklist({
                   }}
                 />
               </View>
-              {renderTargetEditor ? (
-                <Button title={t('item.details')} variant="secondary" onPress={() => setEditingTarget(true)} />
-              ) : null}
               {selectedView?.onUndo ? (
                 <Button
                   title={t('target.undoLastTap')}
@@ -193,10 +198,11 @@ export function Checklist({
                 onPress={() => {
                   deleteItem(kind, selected);
                   close();
+                  offerUndo(t('undo.deleted', { title: selected.title }), () => restoreItem(kind, selected));
                 }}
               />
             </View>
-          )
+          </>
         ) : null}
       </Sheet>
     </View>

@@ -53,6 +53,11 @@ export function deleteEvent(event: PlannerEvent): void {
   writeFields('event', event.id, event.plannerId, { deleted: true });
 }
 
+/** Undo of deleteEvent; its reminders were left in place. */
+export function restoreEvent(event: PlannerEvent): void {
+  writeFields('event', event.id, event.plannerId, { deleted: false });
+}
+
 interface OccurrenceEdit {
   title: string;
   date: IsoDate;

@@ -1,14 +1,16 @@
-import { addDays, IsoDate, isoWeekday, Occurrence, Task, TEXT_LIMITS, WeekRange } from '@planner/shared';
+import { addDays, Habit, IsoDate, isoWeekday, Occurrence, scheduleVersionForWeek, Task, TEXT_LIMITS, WeekRange } from '@planner/shared';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useDayData } from '@/data/queries';
 import { setDayNote, setFocus } from '@/data/repositories/days';
 import { removeLatestCompletion } from '@/data/repositories/completions';
+import { getHabitSchedules } from '@/data/repositories/habits';
 import { Checklist, DayCell } from '@/features/checklist/Checklist';
 import { taskView } from '@/features/checklist/itemViews';
 import { TaskCreateSheet, TaskTargetSheet } from '@/features/checklist/TargetSheets';
-import { habitCell, habitStatus } from '@/features/habits/HabitGrid';
+import { habitCell, HabitEditor, habitStatus } from '@/features/habits/HabitGrid';
 import { formatFullDate, formatTime, formatWeekday, todayIso, upper } from '@/lib/format';
 import { useCanEdit, usePlanner, usePlannerId } from '@/state/planner';
 import { Card, EditableText, IconButton, pressedStyle, SectionTitle, textStyles } from '@/ui/components';
@@ -22,6 +24,7 @@ export function DayColumn({ date, range, compact }: { date: IsoDate; range: Week
   const plannerId = usePlannerId();
   const planner = usePlanner();
   const canEdit = useCanEdit();
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const { entry, tasks, occurrences, todaysHabits, counts, spanCounts } = useDayData(plannerId, date);
   const taskViews = new Map(tasks.map((task) => [task.id, taskView(task, date, counts, spanCounts)]));
   const color = dayColor(p, isoWeekday(date), planner.dayColors);
@@ -83,10 +86,17 @@ export function DayColumn({ date, range, compact }: { date: IsoDate; range: Week
             const status = habitStatus(row);
             return (
               <View key={habit.id} style={styles.habitRow}>
-                <Text style={[text.body, styles.flex]} numberOfLines={1}>
-                  {habit.name}
-                  {status ? <Text style={text.muted}>{`  ·  ${t('day.thisWeek')} ${status}`}</Text> : null}
-                </Text>
+                <Pressable
+                  disabled={!canEdit}
+                  onPress={() => setEditingHabit(habit)}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [styles.flex, pressed && pressedStyle]}
+                >
+                  <Text style={text.body} numberOfLines={1}>
+                    {habit.name}
+                    {status ? <Text style={text.muted}>{`  ·  ${t('day.thisWeek')} ${status}`}</Text> : null}
+                  </Text>
+                </Pressable>
                 {cell && cell.kind === 'counter' && cell.count > 0 && canEdit ? (
                   <IconButton glyph="−" size={18} label={t('target.undoLastTap')} onPress={() => removeLatestCompletion(habit.plannerId, habit.id, date)} />
                 ) : null}
@@ -111,6 +121,17 @@ export function DayColumn({ date, range, compact }: { date: IsoDate; range: Week
           renderTargetEditor={(item, close) => <TaskTargetSheet task={item as Task} onDone={close} />}
         />
       </Card>
+
+      {editingHabit ? (
+        <HabitEditor
+          habit={editingHabit}
+          plannerId={plannerId}
+          weekKey={range.weekKey}
+          version={scheduleVersionForWeek(editingHabit.id, getHabitSchedules(plannerId), range.weekKey)}
+          dates={range.days}
+          onClose={() => setEditingHabit(null)}
+        />
+      ) : null}
 
       <Card>
         <SectionTitle>{t('day.note')}</SectionTitle>

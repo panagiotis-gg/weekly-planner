@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useWeekData } from '@/data/queries';
 import { setWeekNote } from '@/data/repositories/days';
+import { AddFab, FAB_ROOM } from '@/features/add/AddFab';
 import { Checklist } from '@/features/checklist/Checklist';
 import { todoView } from '@/features/checklist/itemViews';
 import { TodoCreateSheet, TodoTargetSheet } from '@/features/checklist/TargetSheets';
@@ -105,6 +106,7 @@ function Week({ weekKey }: { weekKey: string }) {
           headerRight: () => <IconButton glyph="⚙" size={20} label={t('settings.title')} onPress={() => router.push('/settings')} />,
         }}
       />
+      <View style={styles.screen}>
       {wide ? (
         <ScrollView contentContainerStyle={styles.wideScroll}>
           {header}
@@ -127,6 +129,8 @@ function Week({ weekKey }: { weekKey: string }) {
           </RiseIn>
         </ScrollView>
       )}
+      <AddFab date={weekKey === currentKey ? todayIso() : range.start} range={range} />
+      </View>
     </>
   );
 }
@@ -137,8 +141,9 @@ const styles = StyleSheet.create({
   weekTitleText: { fontSize: 20, fontWeight: '700' },
   panel: { gap: 12 },
   phoneCalendar: { marginHorizontal: -12, paddingHorizontal: 4 },
-  narrowScroll: { padding: 16, gap: 12 },
-  wideScroll: { padding: 20, gap: 16 },
+  screen: { flex: 1 },
+  narrowScroll: { padding: 16, paddingBottom: FAB_ROOM, gap: 12 },
+  wideScroll: { padding: 20, paddingBottom: FAB_ROOM, gap: 16 },
   wideBody: { flexDirection: 'row', gap: 16, alignItems: 'flex-start' },
   widePanel: { width: 360 },
   columnsScroll: { flex: 1 },

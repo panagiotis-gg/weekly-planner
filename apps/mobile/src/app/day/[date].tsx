@@ -3,6 +3,7 @@ import { Redirect, router, Stack, useLocalSearchParams } from 'expo-router';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PanResponder, ScrollView, StyleSheet, View } from 'react-native';
+import { AddFab, FAB_ROOM } from '@/features/add/AddFab';
 import { DayColumn } from '@/features/day/DayColumn';
 import { formatWeekday, todayIso } from '@/lib/format';
 import { PlannerGate, usePlanner } from '@/state/planner';
@@ -32,6 +33,7 @@ function DayPage({ date }: { date: IsoDate }) {
   const p = usePalette();
   const planner = usePlanner();
   const weekKey = weekKeyOf(date, planner.weekStartDay);
+  const range = weekRange(weekKey, planner.weekStartDay);
 
   const swipe = useMemo(() => {
     const go = (step: number) => router.setParams({ date: addDays(date, step) });
@@ -70,16 +72,17 @@ function DayPage({ date }: { date: IsoDate }) {
       {/* key: a new day starts scrolled to the top. */}
       <ScrollView key={date} contentContainerStyle={styles.page}>
         <RiseIn>
-          <DayColumn date={date} range={weekRange(weekKey, planner.weekStartDay)} />
+          <DayColumn date={date} range={range} />
         </RiseIn>
       </ScrollView>
+      <AddFab date={date} range={range} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  page: { padding: 16, paddingBottom: 40, maxWidth: 640, width: '100%', alignSelf: 'center' },
+  page: { padding: 16, paddingBottom: FAB_ROOM, maxWidth: 640, width: '100%', alignSelf: 'center' },
   arrows: { flexDirection: 'row', gap: 4 },
 });
 

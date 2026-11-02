@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { listenForNotificationTaps } from '@/features/reminders/notificationTaps';
 import { PlannerProvider } from '@/state/planner';
 import { usePalette } from '@/ui/theme';
+import { UndoBar } from '@/ui/undo';
 
 function AppStack() {
   const p = usePalette();
@@ -38,6 +39,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <PlannerProvider>
         <AppStack />
+        <UndoBar />
       </PlannerProvider>
     </SafeAreaProvider>
   );

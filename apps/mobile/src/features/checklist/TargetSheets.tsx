@@ -6,6 +6,7 @@ import {
   addTask,
   addWeeklyTodo,
   NO_DUE,
+  renameItem,
   setTaskTarget,
   setTaskTime,
   setTodoDue,
@@ -135,9 +136,23 @@ function TaskTargetFields({ value, onChange }: { value: TaskTargetValue; onChang
   );
 }
 
-/** A day task's details: time, reminders, and target (N times a day, optionally spread — J4, J12, K4). */
+/** Name field at the top of an item's details (L3). */
+function NameField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { t } = useTranslation();
+  const p = usePalette();
+  const text = textStyles(p);
+  return (
+    <>
+      <Text style={text.muted}>{t('event.title')}</Text>
+      <Field value={value} onChangeText={onChange} maxLength={TEXT_LIMITS.title} accessibilityLabel={t('event.title')} />
+    </>
+  );
+}
+
+/** A day task's details: name, time, reminders, and target (N times a day, optionally spread — J4, J12, K4, L3). */
 export function TaskTargetSheet({ task, onDone }: { task: Task; onDone: () => void }) {
   const { t } = useTranslation();
+  const [title, setTitle] = useState(task.title);
   const [value, setValue] = useState<TaskTargetValue>({ perDay: task.perDay, spanDays: task.spanDays });
   const [time, setTime] = useState(task.time);
   const [offsets, setOffsets] = useState(() => getItemOffsets(task.plannerId, task.id));
@@ -145,6 +160,7 @@ export function TaskTargetSheet({ task, onDone }: { task: Task; onDone: () => vo
   const save = () => {
     const lost = countCompletionsOutside(task.plannerId, task.id, taskDates({ date: task.date, ...value }));
     const run = () => {
+      if (title.trim() !== task.title) renameItem('task', task, title);
       setTaskTarget(task, value.perDay, value.spanDays);
       setTaskTime(task, time);
       setItemReminders(task.plannerId, 'task', task.id, offsets);
@@ -156,10 +172,11 @@ export function TaskTargetSheet({ task, onDone }: { task: Task; onDone: () => vo
 
   return (
     <View style={styles.wrap}>
+      <NameField value={title} onChange={setTitle} />
       <TimeRow value={time} onChange={setTime} />
       <ReminderPicker value={offsets} onChange={setOffsets} hint={time ? undefined : t('reminder.noTimeHint')} />
       <TaskTargetFields value={value} onChange={setValue} />
-      <Button title={t('common.save')} onPress={save} />
+      <Button title={t('common.save')} onPress={save} disabled={!title.trim()} />
       <Button title={t('common.cancel')} variant="secondary" onPress={onDone} />
     </View>
   );
@@ -201,20 +218,24 @@ export function TaskCreateSheet({ plannerId, date, onDone }: { plannerId: string
   );
 }
 
-/** A weekly to-do's details: due day, reminders, and target over the 7 days of its week (J3, K5). */
+/** A weekly to-do's details: name, due day, reminders, and target over the 7 days of its week (J3, K5, L3). */
 export function TodoTargetSheet({ todo, onDone }: { todo: WeeklyTodo; onDone: () => void }) {
   const { t } = useTranslation();
+  const [title, setTitle] = useState(todo.title);
   const [target, setTarget] = useState<Target>(todoTarget(todo));
   const [due, setDue] = useState<TodoDue>({ dueDate: todo.dueDate, dueTime: todo.dueTime });
   const [offsets, setOffsets] = useState(() => getItemOffsets(todo.plannerId, todo.id));
   return (
     <View style={styles.wrap}>
+      <NameField value={title} onChange={setTitle} />
       <TodoDueFields weekKey={todo.weekKey} value={due} onChange={setDue} />
       <TodoReminders due={due} value={offsets} onChange={setOffsets} />
       <TargetEditor value={target} onChange={setTarget} maxDays={7} />
       <Button
         title={t('common.save')}
+        disabled={!title.trim()}
         onPress={() => {
+          if (title.trim() !== todo.title) renameItem('weekly_todo', todo, title);
           setTodoTarget(todo, target);
           setTodoDue(todo, due);
           // Without a due day a to-do has no reminders (K5).

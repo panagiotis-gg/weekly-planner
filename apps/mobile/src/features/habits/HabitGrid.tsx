@@ -154,7 +154,7 @@ export function HabitGrid({
 }
 
 /** Create (habit = null) or edit a habit: name, days, target and the hide-when-achieved setting. */
-function HabitEditor({
+export function HabitEditor({
   habit,
   plannerId,
   weekKey,
